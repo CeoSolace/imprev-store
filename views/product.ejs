@@ -36,6 +36,7 @@
       overflow:hidden;
     }
 
+    /* --- Gallery with thumbnails --- */
     .gallery{
       border-radius: 20px;
       border:1px solid rgba(255,255,255,.08);
@@ -43,14 +44,77 @@
       overflow:hidden;
       box-shadow: 0 10px 30px rgba(0,0,0,.35);
     }
-    .gallery img{
+
+    .galleryMain{
+      position: relative;
+      width: 100%;
+      background: rgba(0,0,0,.20);
+    }
+    .galleryMain img{
       width:100%;
       height: 520px;
       object-fit: cover;
       display:block;
     }
-    @media (max-width: 980px){ .gallery img{ height: 420px; } }
-    @media (max-width: 520px){ .gallery img{ height: 340px; } }
+    @media (max-width: 980px){ .galleryMain img{ height: 420px; } }
+    @media (max-width: 520px){ .galleryMain img{ height: 340px; } }
+
+    .thumbs{
+      display:flex;
+      gap:10px;
+      padding: 12px;
+      border-top: 1px solid rgba(255,255,255,.08);
+      background: rgba(0,0,0,.14);
+      overflow-x:auto;
+      scrollbar-width: thin;
+    }
+    .thumbs::-webkit-scrollbar{ height: 8px; }
+    .thumbs::-webkit-scrollbar-thumb{
+      background: rgba(255,255,255,.10);
+      border-radius: 999px;
+    }
+
+    .thumb{
+      flex: 0 0 auto;
+      width: 84px;
+      height: 84px;
+      border-radius: 14px;
+      border:1px solid rgba(255,255,255,.10);
+      overflow:hidden;
+      background: rgba(255,255,255,.03);
+      cursor:pointer;
+      position:relative;
+      transition: .15s ease;
+    }
+    .thumb:hover{
+      transform: translateY(-1px);
+      border-color: rgba(124,92,255,.35);
+    }
+    .thumb img{
+      width:100%;
+      height:100%;
+      object-fit: cover;
+      display:block;
+    }
+    .thumb.active{
+      border-color: rgba(124,92,255,.70);
+      box-shadow: 0 0 0 4px rgba(124,92,255,.12);
+    }
+
+    .galleryHint{
+      position:absolute;
+      right: 12px;
+      bottom: 12px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.35);
+      color: rgba(238,241,255,.78);
+      font-weight: 900;
+      font-size: 12px;
+      backdrop-filter: blur(8px);
+      user-select:none;
+    }
 
     .pHead{ padding: 16px; }
     .pTitle{ font-size: 34px; letter-spacing:-.8px; font-weight: 1000; line-height:1.08; }
@@ -60,7 +124,6 @@
       line-height: 1.55;
       font-size: 14px;
 
-      /* clamp if someone writes an essay */
       display: -webkit-box;
       -webkit-line-clamp: 4;
       -webkit-box-orient: vertical;
@@ -188,9 +251,35 @@
       </section>
     <% } else { %>
 
+      <% const imgs = (product.images || []).filter(Boolean); %>
+
       <div class="pWrap">
         <div class="gallery">
-          <img src="<%= (product.images && product.images[0]) ? product.images[0] : '' %>" alt="">
+          <div class="galleryMain">
+            <img
+              id="mainImg"
+              src="<%= imgs.length ? imgs[0] : '' %>"
+              alt=""
+            />
+            <% if (imgs.length > 1) { %>
+              <div class="galleryHint">Tap thumbnails or use ← →</div>
+            <% } %>
+          </div>
+
+          <% if (imgs.length > 1) { %>
+            <div class="thumbs" id="thumbs">
+              <% for (let i = 0; i < imgs.length; i++) { %>
+                <button
+                  type="button"
+                  class="thumb <%= i === 0 ? 'active' : '' %>"
+                  data-i="<%= i %>"
+                  aria-label="View image <%= i+1 %>"
+                >
+                  <img src="<%= imgs[i] %>" alt="">
+                </button>
+              <% } %>
+            </div>
+          <% } %>
         </div>
 
         <div class="pCard">
@@ -263,6 +352,34 @@
           <% } %>
         </div>
       </div>
+
+      <% if (imgs.length > 1) { %>
+        <script>
+          (function(){
+            const imgs = <%- JSON.stringify(imgs) %>;
+            let idx = 0;
+
+            const main = document.getElementById("mainImg");
+            const thumbs = Array.from(document.querySelectorAll(".thumb"));
+
+            function setIndex(i){
+              idx = (i + imgs.length) % imgs.length;
+              main.src = imgs[idx];
+              thumbs.forEach((t, n) => t.classList.toggle("active", n === idx));
+            }
+
+            thumbs.forEach(t => {
+              t.addEventListener("click", () => setIndex(Number(t.dataset.i || 0)));
+            });
+
+            // keyboard arrows
+            document.addEventListener("keydown", (e) => {
+              if (e.key === "ArrowLeft") setIndex(idx - 1);
+              if (e.key === "ArrowRight") setIndex(idx + 1);
+            });
+          })();
+        </script>
+      <% } %>
 
     <% } %>
   </main>
