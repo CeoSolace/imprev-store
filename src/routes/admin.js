@@ -34,6 +34,7 @@ r.post("/login", async (req, res) => {
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
   });
+
   res.redirect("/admin");
 });
 
@@ -71,7 +72,6 @@ r.post("/products/new", adminOnly, upload.array("images", 6), async (req, res) =
   res.redirect("/admin/products");
 });
 
-// ✅ passes settings/fees to template (so pricing UI can show fee info)
 r.get("/products/:id", adminOnly, async (req, res) => {
   const product = await Product.findById(req.params.id).lean();
   if (!product) return res.redirect("/admin/products");
@@ -117,8 +117,8 @@ r.post("/products/:id/remove-image", adminOnly, async (req, res) => {
 
 /**
  * ✅ MULTI-VARIANT UPSERT (ONE SUBMIT)
- * This accepts either single values or arrays from the form.
- * Regions: UK + US only (GBP + USD) as requested.
+ * Required by schema: shipping/profit must include UK/EU/US/TR/ROW.
+ * You can still focus on GBP + USD, but we include the other keys too (default 0).
  */
 r.post("/products/:id/variant", adminOnly, async (req, res) => {
   const p = await Product.findById(req.params.id);
@@ -132,10 +132,18 @@ r.post("/products/:id/variant", adminOnly, async (req, res) => {
   const printfulVariantIdArr = toArr(req.body.printfulVariantId);
 
   const manufacturingArr = toArr(req.body.manufacturing);
+
   const shipUKArr = toArr(req.body.shipUK);
+  const shipEUArr = toArr(req.body.shipEU);
   const shipUSArr = toArr(req.body.shipUS);
+  const shipTRArr = toArr(req.body.shipTR);
+  const shipROWArr = toArr(req.body.shipROW);
+
   const profitUKArr = toArr(req.body.profitUK);
+  const profitEUArr = toArr(req.body.profitEU);
   const profitUSArr = toArr(req.body.profitUS);
+  const profitTRArr = toArr(req.body.profitTR);
+  const profitROWArr = toArr(req.body.profitROW);
 
   const n = Math.max(
     skuArr.length,
@@ -160,12 +168,18 @@ r.post("/products/:id/variant", adminOnly, async (req, res) => {
     const manufacturing = Number(manufacturingArr[i] ?? 0);
 
     const shipUK = Number(shipUKArr[i] ?? 0);
+    const shipEU = Number(shipEUArr[i] ?? 0);
     const shipUS = Number(shipUSArr[i] ?? 0);
+    const shipTR = Number(shipTRArr[i] ?? 0);
+    const shipROW = Number(shipROWArr[i] ?? 0);
 
     const profitUK = Number(profitUKArr[i] ?? 0);
+    const profitEU = Number(profitEUArr[i] ?? 0);
     const profitUS = Number(profitUSArr[i] ?? 0);
+    const profitTR = Number(profitTRArr[i] ?? 0);
+    const profitROW = Number(profitROWArr[i] ?? 0);
 
-    // skip blank row
+    // skip blank rows
     const emptyRow = !sku && !name && !printfulVariantId;
     if (emptyRow) continue;
 
@@ -178,8 +192,14 @@ r.post("/products/:id/variant", adminOnly, async (req, res) => {
     if (!printfulVariantId) { errors.push(`Row ${i + 1}: Printful Variant ID required`); continue; }
 
     if (manufacturing < 0) { errors.push(`Row ${i + 1}: Manufacturing must be >= 0`); continue; }
-    if (shipUK < 0 || shipUS < 0) { errors.push(`Row ${i + 1}: Shipping must be >= 0`); continue; }
-    if (profitUK < 0 || profitUS < 0) { errors.push(`Row ${i + 1}: Profit cannot be negative`); continue; }
+    if (shipUK < 0 || shipEU < 0 || shipUS < 0 || shipTR < 0 || shipROW < 0) {
+      errors.push(`Row ${i + 1}: Shipping must be >= 0`);
+      continue;
+    }
+    if (profitUK < 0 || profitEU < 0 || profitUS < 0 || profitTR < 0 || profitROW < 0) {
+      errors.push(`Row ${i + 1}: Profit cannot be negative`);
+      continue;
+    }
 
     const variant = {
       sku,
@@ -188,9 +208,9 @@ r.post("/products/:id/variant", adminOnly, async (req, res) => {
       printfulVariantId,
       costs: {
         manufacturing,
-        shipping: { UK: shipUK, US: shipUS },
+        shipping: { UK: shipUK, EU: shipEU, US: shipUS, TR: shipTR, ROW: shipROW },
       },
-      profit: { UK: profitUK, US: profitUS },
+      profit: { UK: profitUK, EU: profitEU, US: profitUS, TR: profitTR, ROW: profitROW },
     };
 
     const idx = (p.variants || []).findIndex((v) => v.sku === sku);
@@ -256,7 +276,6 @@ r.get("/settings", adminOnly, async (req, res) => {
   res.render("admin/settings", { settings });
 });
 
-// ✅ won’t crash if settings doc doesn't exist
 r.post("/settings", adminOnly, async (req, res) => {
   let s = await Settings.findOne();
   if (!s) s = await Settings.create({ stripeFees: {} });
