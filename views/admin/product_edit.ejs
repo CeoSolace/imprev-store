@@ -1,240 +1,309 @@
 <!doctype html>
 <html>
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Edit Product • Imprev Admin</title>
-  <link rel="stylesheet" href="/admin.css" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title><%= product.name %> • Admin • Imprev Clothing</title>
+  <link rel="stylesheet" href="/style.css" />
   <style>
-    .tableWrap { overflow:auto; border-radius: 16px; border:1px solid rgba(255,255,255,.08); }
-    table.pricing { width: 100%; border-collapse: collapse; min-width: 900px; }
-    table.pricing th, table.pricing td { padding: 10px; border-bottom:1px solid rgba(255,255,255,.08); vertical-align: top; }
-    table.pricing th { text-align:left; font-weight: 950; color: rgba(238,241,255,.85); background: rgba(255,255,255,.03); position: sticky; top: 0; }
-    .mini { font-size: 12px; color: rgba(238,241,255,.55); line-height:1.4; margin-top:6px; }
-    .kpi { display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
-    .chip { padding:6px 10px; border:1px solid rgba(255,255,255,.08); border-radius:999px; background: rgba(0,0,0,.15); font-weight:900; font-size:12px; color: rgba(238,241,255,.75); }
-    .ok { border-color: rgba(46,229,157,.25); color: rgba(210,255,238,.9); background: rgba(46,229,157,.08); }
-    .bad { border-color: rgba(255,90,90,.25); color: rgba(255,190,190,.95); background: rgba(255,90,90,.08); }
-    .tight input { max-width: 180px; }
+    .adminTopRow{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-bottom: 12px;
+    }
+    .adminTopRow .left{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    .pill2{
+      padding:8px 10px;
+      border-radius: 999px;
+      border:1px solid var(--border);
+      background: rgba(255,255,255,.03);
+      color: var(--muted);
+      font-weight:900;
+      font-size: 13px;
+    }
+    .row3{
+      display:grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap:10px;
+    }
+    @media (max-width: 900px){ .row3{ grid-template-columns: 1fr; } }
+
+    table{
+      width:100%;
+      border-collapse: collapse;
+      overflow:hidden;
+      border-radius: var(--r16);
+      border:1px solid var(--border);
+      background: rgba(255,255,255,.02);
+    }
+    th, td{
+      padding: 10px;
+      border-bottom:1px solid rgba(255,255,255,.06);
+      vertical-align: top;
+      text-align:left;
+      font-size: 13px;
+      color: rgba(238,241,255,.85);
+    }
+    th{ color: rgba(238,241,255,.65); font-weight: 1000; letter-spacing:.2px; text-transform: uppercase; font-size:12px; }
+    tr:last-child td{ border-bottom: none; }
+
+    .btnSmall{
+      width:auto;
+      padding: 9px 12px;
+      margin-top: 0;
+      border-radius: 12px;
+    }
+    .dangerBtn{
+      background: rgba(255,90,90,.12);
+      border-color: rgba(255,90,90,.35);
+      color: rgba(255,220,220,.95);
+    }
+    .dangerBtn:hover{ filter: brightness(1.05); }
+    .mutedBox{
+      margin-top: 10px;
+      padding: 12px;
+      border-radius: var(--r16);
+      border:1px solid rgba(255,255,255,.08);
+      background: rgba(0,0,0,.18);
+      color: rgba(238,241,255,.65);
+      font-weight: 900;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    .rowCard{
+      border-radius: var(--r16);
+      border:1px solid rgba(255,255,255,.08);
+      background: rgba(0,0,0,.14);
+      padding: 12px;
+    }
   </style>
 </head>
-<body class="a">
-  <div class="bar">
-    <div class="logo"><a href="/admin/products">← Products</a></div>
-    <div class="barLinks">
-      <form method="POST" action="/admin/products/<%= product._id %>/toggle" style="margin:0;">
-        <button type="submit"><%= product.active ? "Disable" : "Enable" %></button>
-      </form>
-      <a href="/admin/orders">Orders</a>
-      <a href="/admin/settings">Settings</a>
+
+<body>
+  <header class="top">
+    <div class="topInner">
+      <a class="brand" href="/">
+        <span class="brandMark"></span>
+        <span>Imprev Clothing</span>
+      </a>
+      <nav class="nav">
+        <a href="/admin">Dashboard</a>
+        <a href="/admin/products">Products</a>
+        <a href="/admin/orders">Orders</a>
+        <a href="/admin/settings">Settings</a>
+      </nav>
     </div>
-  </div>
+  </header>
 
-  <div class="wrapA">
-    <h1><%= product.name %></h1>
-    <p class="muted">
-      Status: <%= product.active ? "Active" : "Inactive" %> • ID: <%= product._id %>
-    </p>
+  <main class="wrap">
+    <div class="adminTopRow">
+      <div class="left">
+        <div class="pill2">Editing</div>
+        <div class="pill2"><%= product.name %></div>
+        <div class="pill2">Status: <%= product.active ? "LIVE" : "DISABLED" %></div>
+      </div>
 
-    <div class="panel2">
-      <h2>Pricing (GBP + USD)</h2>
-      <p class="muted">
-        You enter: <b>Manufacturing + Shipping + Profit</b>.
-        The system calculates the <b>Customer Price</b> so you never pay out of pocket:
-        <br/>
-        Customer Price − Stripe Fee − Manufacturing − Shipping = Profit
-      </p>
-      <p class="muted">
-        Use <b>minor units</b>: £1.00 = 100, $1.00 = 100
-      </p>
-    </div>
-
-    <div class="panel2" style="margin-top:14px;">
-      <h2>Existing variants</h2>
-
-      <div class="list">
-        <% var vs = (product.variants || []); %>
-        <% for (var i = 0; i < vs.length; i++) { var v = vs[i]; %>
-          <div class="row">
-            <div>
-              <div class="title"><%= v.name %> <span class="pill">SKU: <%= v.sku %></span></div>
-              <div class="muted">Printful Variant ID: <%= v.printfulVariantId %></div>
-              <div class="muted">Sizes: <%= (v.sizes || []).join(", ") %></div>
-            </div>
-            <div class="actions">
-              <form method="POST" action="/admin/products/<%= product._id %>/variant-delete" onsubmit="return confirm('Delete variant?');">
-                <input type="hidden" name="sku" value="<%= v.sku %>" />
-                <button type="submit" class="danger">Delete</button>
-              </form>
-            </div>
-          </div>
-        <% } %>
+      <div class="left">
+        <form method="POST" action="/admin/products/<%= product._id %>/toggle">
+          <button class="btn btnSmall" type="submit"><%= product.active ? "Disable" : "Enable" %></button>
+        </form>
+        <form method="POST" action="/admin/products/<%= product._id %>/delete" onsubmit="return confirm('Delete this product?');">
+          <button class="btn btnSmall dangerBtn" type="submit">Delete</button>
+        </form>
       </div>
     </div>
 
-    <div class="panel2 tight" style="margin-top:14px;">
-      <h2>Add / Update Variant</h2>
+    <section class="box">
+      <div class="h">Images</div>
+      <div class="muted" style="margin-top:6px;">First image is used as the product cover.</div>
 
-      <% 
-        // Stripe fee config (fallback defaults if missing)
-        var F = fee || {};
-        var ukPct = (F.UK && typeof F.UK.percent === "number") ? F.UK.percent : 0.029;
-        var ukFix = (F.UK && typeof F.UK.fixed === "number") ? F.UK.fixed : 30;
-
-        var usPct = (F.US && typeof F.US.percent === "number") ? F.US.percent : 0.029;
-        var usFix = (F.US && typeof F.US.fixed === "number") ? F.US.fixed : 30;
-      %>
-
-      <form method="POST" action="/admin/products/<%= product._id %>/variant" id="variantForm">
-        <div class="grid2">
-          <div>
-            <label>SKU (unique)</label>
-            <input name="sku" required placeholder="gaming-tee-fadedblack-s" />
+      <div class="grid" style="margin-top:12px;">
+        <% (product.images || []).forEach((u) => { %>
+          <div class="card" style="overflow:hidden;">
+            <img src="<%= u %>" alt="">
+            <div class="cardBody">
+              <form method="POST" action="/admin/products/<%= product._id %>/remove-image">
+                <input type="hidden" name="url" value="<%= u %>">
+                <button class="btn btnSmall dangerBtn" type="submit">Remove</button>
+              </form>
+            </div>
           </div>
-          <div>
-            <label>Variant name</label>
-            <input name="vname" required placeholder="Tee (Faded Black / S)" />
-          </div>
-        </div>
+        <% }) %>
+      </div>
 
-        <label>Sizes (comma-separated)</label>
-        <input name="sizes" required placeholder="S,M,L,XL,2XL,3XL" />
+      <form method="POST" action="/admin/products/<%= product._id %>/add-image" enctype="multipart/form-data" style="margin-top:14px;">
+        <label>Add image</label>
+        <input type="file" name="image" accept="image/*" required />
+        <button class="btn" type="submit">Upload</button>
+      </form>
+    </section>
 
-        <label>Printful Variant ID</label>
-        <input name="printfulVariantId" type="number" required placeholder="17569" />
+    <section class="box" style="margin-top:14px;">
+      <div class="h">Current Variants</div>
+      <div class="muted" style="margin-top:6px;">SKU is the unique key. Delete removes it from this product.</div>
 
-        <hr class="sep"/>
-
-        <h3>Manufacturing cost (Printful)</h3>
-        <label>Manufacturing (minor units)</label>
-        <input name="manufacturing" id="manufacturing" type="number" required value="0" />
-        <div class="mini">Example: £18.40 → 1840</div>
-
-        <hr class="sep"/>
-
-        <h3>Shipping + Profit per currency</h3>
-
-        <div class="tableWrap">
-          <table class="pricing" id="pricingTable">
+      <% if (!product.variants || !product.variants.length) { %>
+        <div class="warn">No variants yet.</div>
+      <% } else { %>
+        <div style="overflow:auto; margin-top:12px;">
+          <table>
             <thead>
               <tr>
-                <th style="min-width:140px;">Currency</th>
-                <th>Stripe fee</th>
-                <th>Shipping (minor)</th>
-                <th>Profit (minor)</th>
-                <th>Customer Price (minor)</th>
-                <th>Status</th>
+                <th>SKU</th>
+                <th>Name</th>
+                <th>Sizes</th>
+                <th>Printful Variant ID</th>
+                <th>Costs (GBP)</th>
+                <th>Costs (USD)</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
-              <tr data-key="UK" data-percent="<%= ukPct %>" data-fixed="<%= ukFix %>">
-                <td><span class="pill">GBP</span></td>
-                <td class="mini"><%= Math.round(ukPct * 1000) / 10 %>% + <%= ukFix %></td>
-                <td>
-                  <input name="shipUK" type="number" value="0" />
-                  <div class="mini">Shipping cost you pay Printful (UK).</div>
-                </td>
-                <td>
-                  <input name="profitUK" type="number" value="0" />
-                  <div class="mini">Profit you keep (GBP).</div>
-                </td>
-                <td>
-                  <input type="number" readonly id="price_UK" value="0" />
-                  <div class="mini">Auto retail price.</div>
-                </td>
-                <td>
-                  <span class="chip" id="check_UK">—</span>
-                </td>
-              </tr>
-
-              <tr data-key="US" data-percent="<%= usPct %>" data-fixed="<%= usFix %>">
-                <td><span class="pill">USD</span></td>
-                <td class="mini"><%= Math.round(usPct * 1000) / 10 %>% + <%= usFix %></td>
-                <td>
-                  <input name="shipUS" type="number" value="0" />
-                  <div class="mini">Shipping cost you pay Printful (US/Intl).</div>
-                </td>
-                <td>
-                  <input name="profitUS" type="number" value="0" />
-                  <div class="mini">Profit you keep (USD).</div>
-                </td>
-                <td>
-                  <input type="number" readonly id="price_US" value="0" />
-                  <div class="mini">Auto retail price.</div>
-                </td>
-                <td>
-                  <span class="chip" id="check_US">—</span>
-                </td>
-              </tr>
+              <% product.variants.forEach((v) => { %>
+                <tr>
+                  <td><%= v.sku %></td>
+                  <td><%= v.name %></td>
+                  <td><%= (v.sizes || []).join(", ") %></td>
+                  <td><%= v.printfulVariantId %></td>
+                  <td>
+                    Manu: <%= (v.costs?.manufacturing ?? 0).toFixed(2) %><br>
+                    Ship UK: <%= (v.costs?.shipping?.UK ?? 0).toFixed(2) %><br>
+                    Profit UK: <%= (v.profit?.UK ?? 0).toFixed(2) %>
+                  </td>
+                  <td>
+                    Ship US: <%= (v.costs?.shipping?.US ?? 0).toFixed(2) %><br>
+                    Profit US: <%= (v.profit?.US ?? 0).toFixed(2) %>
+                  </td>
+                  <td style="white-space:nowrap;">
+                    <form method="POST" action="/admin/products/<%= product._id %>/variant-delete" onsubmit="return confirm('Delete variant <%= v.sku %>?');">
+                      <input type="hidden" name="sku" value="<%= v.sku %>">
+                      <button class="btn btnSmall dangerBtn" type="submit">Delete</button>
+                    </form>
+                  </td>
+                </tr>
+              <% }) %>
             </tbody>
           </table>
         </div>
+      <% } %>
+    </section>
 
-        <!-- Hidden zeros so your backend schema still receives the other regions -->
-        <input type="hidden" name="shipEU" value="0" />
-        <input type="hidden" name="shipTR" value="0" />
-        <input type="hidden" name="shipROW" value="0" />
+    <section class="box" style="margin-top:14px;">
+      <div class="h">Add / Update Variants (Bulk)</div>
+      <div class="muted" style="margin-top:6px;">Add multiple rows, submit once. Existing SKUs will be updated.</div>
 
-        <input type="hidden" name="profitEU" value="0" />
-        <input type="hidden" name="profitTR" value="0" />
-        <input type="hidden" name="profitROW" value="0" />
+      <div class="mutedBox">
+        You asked for GBP + USD only.
+        Manufacturing is treated as GBP cost (same base product), then you set Shipping + Profit for UK and US separately.
+      </div>
 
-        <button type="submit" style="margin-top:14px;">Save Variant</button>
+      <form method="POST" action="/admin/products/<%= product._id %>/variant" id="variantsForm" style="margin-top:12px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+          <div class="pill2">Rows: <span id="rowCount">1</span></div>
+          <button class="btn btnSmall" type="button" id="addRow">+ Add row</button>
+        </div>
 
-        <p class="muted" style="margin-top:10px;">
-          Customer Price is calculated so: retail covers manufacturing + shipping + Stripe fees + your profit.
-        </p>
+        <div id="variantRows" style="margin-top:12px; display:flex; flex-direction:column; gap:12px;">
+          <div class="rowCard variantRow">
+            <div class="row2">
+              <div>
+                <label>SKU</label>
+                <input name="sku" placeholder="AS5082-FB-S" required />
+              </div>
+              <div>
+                <label>Variant name</label>
+                <input name="vname" placeholder="Faded Black / S" required />
+              </div>
+            </div>
+
+            <div class="row2">
+              <div>
+                <label>Sizes (comma)</label>
+                <input name="sizes" placeholder="S,M,L,XL,2XL,3XL" required />
+              </div>
+              <div>
+                <label>Printful Variant ID</label>
+                <input name="printfulVariantId" type="number" placeholder="17569" required />
+              </div>
+            </div>
+
+            <div class="row3">
+              <div>
+                <label>Manufacturing (GBP)</label>
+                <input name="manufacturing" type="number" step="0.01" placeholder="19.45" required />
+              </div>
+              <div>
+                <label>Shipping UK (GBP)</label>
+                <input name="shipUK" type="number" step="0.01" placeholder="3.99" required />
+              </div>
+              <div>
+                <label>Profit UK (GBP)</label>
+                <input name="profitUK" type="number" step="0.01" placeholder="10.00" required />
+              </div>
+            </div>
+
+            <div class="row3">
+              <div>
+                <label>Shipping US (USD)</label>
+                <input name="shipUS" type="number" step="0.01" placeholder="6.99" required />
+              </div>
+              <div>
+                <label>Profit US (USD)</label>
+                <input name="profitUS" type="number" step="0.01" placeholder="12.00" required />
+              </div>
+              <div style="display:flex; align-items:flex-end;">
+                <button type="button" class="btn btnSmall dangerBtn removeRow">Remove row</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <button class="btn" type="submit" style="margin-top:12px;">Save all variants</button>
       </form>
-    </div>
-  </div>
+    </section>
+  </main>
+
+  <footer class="foot">© Imprev Clothing</footer>
 
   <script>
-    function calcRetail(baseCost, profit, percent, fixed) {
-      // retail - (retail*percent + fixed) - baseCost = profit
-      // retail*(1-percent) = baseCost + profit + fixed
-      var raw = (baseCost + profit + fixed) / (1 - percent);
-      return Math.ceil(raw / 10) * 10; // round up to nearest 10 minor units
+    const container = document.getElementById("variantRows");
+    const addBtn = document.getElementById("addRow");
+    const countEl = document.getElementById("rowCount");
+
+    function updateCount(){
+      countEl.textContent = String(container.querySelectorAll(".variantRow").length);
     }
 
-    function stripeFeeForRetail(retail, percent, fixed) {
-      return Math.round(retail * percent) + fixed;
-    }
-
-    function num(v){ return Number(v || 0); }
-
-    function update() {
-      var manu = num(document.getElementById("manufacturing").value);
-
-      var rows = document.querySelectorAll("#pricingTable tbody tr");
-      for (var i = 0; i < rows.length; i++) {
-        var row = rows[i];
-        var key = row.getAttribute("data-key");
-        var percent = num(row.getAttribute("data-percent"));
-        var fixed = num(row.getAttribute("data-fixed"));
-
-        var ship = num(row.querySelector('input[name="ship' + key + '"]').value);
-        var profit = num(row.querySelector('input[name="profit' + key + '"]').value);
-
-        var baseCost = manu + ship;
-        var retail = calcRetail(baseCost, profit, percent, fixed);
-        var fee = stripeFeeForRetail(retail, percent, fixed);
-        var realized = retail - fee - baseCost;
-
-        document.getElementById("price_" + key).value = retail;
-
-        var chip = document.getElementById("check_" + key);
-        if (retail > 0 && realized >= profit) {
-          chip.textContent = "OK • est profit " + realized;
-          chip.className = "chip ok";
+    function wireRow(row){
+      const btn = row.querySelector(".removeRow");
+      if (!btn) return;
+      btn.addEventListener("click", () => {
+        const rows = container.querySelectorAll(".variantRow");
+        if (rows.length <= 1) {
+          row.querySelectorAll("input").forEach(i => i.value = "");
         } else {
-          chip.textContent = "BAD • est profit " + realized;
-          chip.className = "chip bad";
+          row.remove();
         }
-      }
+        updateCount();
+      });
     }
 
-    document.getElementById("variantForm").addEventListener("input", update);
-    update();
+    // wire initial row
+    wireRow(container.querySelector(".variantRow"));
+    updateCount();
+
+    addBtn.addEventListener("click", () => {
+      const base = container.querySelector(".variantRow");
+      const clone = base.cloneNode(true);
+      clone.querySelectorAll("input").forEach(i => i.value = "");
+      container.appendChild(clone);
+      wireRow(clone);
+      updateCount();
+      clone.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
   </script>
 </body>
 </html>
