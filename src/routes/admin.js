@@ -71,7 +71,7 @@ r.post("/products/new", adminOnly, upload.array("images", 6), async (req, res) =
   res.redirect("/admin/products");
 });
 
-// ✅ FIX: pass Stripe fees into product_edit.ejs
+// ✅ passes settings/fees to template (so pricing UI can show fee info)
 r.get("/products/:id", adminOnly, async (req, res) => {
   const product = await Product.findById(req.params.id).lean();
   if (!product) return res.redirect("/admin/products");
@@ -115,70 +115,90 @@ r.post("/products/:id/remove-image", adminOnly, async (req, res) => {
   res.redirect(`/admin/products/${p._id}`);
 });
 
-// upsert variant by sku
+/**
+ * ✅ MULTI-VARIANT UPSERT (ONE SUBMIT)
+ * This accepts either single values or arrays from the form.
+ * Regions: UK + US only (GBP + USD) as requested.
+ */
 r.post("/products/:id/variant", adminOnly, async (req, res) => {
   const p = await Product.findById(req.params.id);
   if (!p) return res.redirect("/admin/products");
 
-  const {
-    sku,
-    vname,
-    sizes,
-    printfulVariantId,
-    manufacturing,
-    shipUK,
-    shipEU,
-    shipUS,
-    shipTR,
-    shipROW,
-    profitUK,
-    profitEU,
-    profitUS,
-    profitTR,
-    profitROW,
-  } = req.body;
+  const toArr = (v) => (Array.isArray(v) ? v : [v]);
 
-  const variant = {
-    sku: String(sku || "").trim(),
-    name: String(vname || "").trim(),
-    sizes: String(sizes || "")
+  const skuArr = toArr(req.body.sku);
+  const vnameArr = toArr(req.body.vname);
+  const sizesArr = toArr(req.body.sizes);
+  const printfulVariantIdArr = toArr(req.body.printfulVariantId);
+
+  const manufacturingArr = toArr(req.body.manufacturing);
+  const shipUKArr = toArr(req.body.shipUK);
+  const shipUSArr = toArr(req.body.shipUS);
+  const profitUKArr = toArr(req.body.profitUK);
+  const profitUSArr = toArr(req.body.profitUS);
+
+  const n = Math.max(
+    skuArr.length,
+    vnameArr.length,
+    sizesArr.length,
+    printfulVariantIdArr.length,
+    manufacturingArr.length
+  );
+
+  const errors = [];
+  const seenSkus = new Set();
+
+  for (let i = 0; i < n; i++) {
+    const sku = String(skuArr[i] ?? "").trim();
+    const name = String(vnameArr[i] ?? "").trim();
+    const sizes = String(sizesArr[i] ?? "")
       .split(",")
       .map((s) => s.trim())
-      .filter(Boolean),
-    printfulVariantId: Number(printfulVariantId || 0),
-    costs: {
-      manufacturing: Number(manufacturing || 0),
-      shipping: {
-        UK: Number(shipUK || 0),
-        EU: Number(shipEU || 0),
-        US: Number(shipUS || 0),
-        TR: Number(shipTR || 0),
-        ROW: Number(shipROW || 0),
+      .filter(Boolean);
+
+    const printfulVariantId = Number(printfulVariantIdArr[i] ?? 0);
+    const manufacturing = Number(manufacturingArr[i] ?? 0);
+
+    const shipUK = Number(shipUKArr[i] ?? 0);
+    const shipUS = Number(shipUSArr[i] ?? 0);
+
+    const profitUK = Number(profitUKArr[i] ?? 0);
+    const profitUS = Number(profitUSArr[i] ?? 0);
+
+    // skip blank row
+    const emptyRow = !sku && !name && !printfulVariantId;
+    if (emptyRow) continue;
+
+    if (!sku) { errors.push(`Row ${i + 1}: SKU required`); continue; }
+    if (seenSkus.has(sku)) { errors.push(`Row ${i + 1}: Duplicate SKU "${sku}" in this submit`); continue; }
+    seenSkus.add(sku);
+
+    if (!name) { errors.push(`Row ${i + 1}: Variant name required`); continue; }
+    if (!sizes.length) { errors.push(`Row ${i + 1}: Sizes required (comma separated)`); continue; }
+    if (!printfulVariantId) { errors.push(`Row ${i + 1}: Printful Variant ID required`); continue; }
+
+    if (manufacturing < 0) { errors.push(`Row ${i + 1}: Manufacturing must be >= 0`); continue; }
+    if (shipUK < 0 || shipUS < 0) { errors.push(`Row ${i + 1}: Shipping must be >= 0`); continue; }
+    if (profitUK < 0 || profitUS < 0) { errors.push(`Row ${i + 1}: Profit cannot be negative`); continue; }
+
+    const variant = {
+      sku,
+      name,
+      sizes,
+      printfulVariantId,
+      costs: {
+        manufacturing,
+        shipping: { UK: shipUK, US: shipUS },
       },
-    },
-    profit: {
-      UK: Number(profitUK || 0),
-      EU: Number(profitEU || 0),
-      US: Number(profitUS || 0),
-      TR: Number(profitTR || 0),
-      ROW: Number(profitROW || 0),
-    },
-  };
+      profit: { UK: profitUK, US: profitUS },
+    };
 
-  if (!variant.sku) return res.status(400).send("SKU required");
-  if (!variant.name) return res.status(400).send("Variant name required");
-  if (!variant.sizes.length) return res.status(400).send("Sizes required");
-  if (!variant.printfulVariantId) return res.status(400).send("Printful Variant ID required");
-  if (variant.costs.manufacturing < 0) return res.status(400).send("Manufacturing cost invalid");
-
-  for (const k of ["UK", "EU", "US", "TR", "ROW"]) {
-    if (variant.costs.shipping[k] < 0) return res.status(400).send("Shipping cost invalid");
-    if (variant.profit[k] < 0) return res.status(400).send("Profit cannot be negative");
+    const idx = (p.variants || []).findIndex((v) => v.sku === sku);
+    if (idx >= 0) p.variants[idx] = variant;
+    else p.variants.push(variant);
   }
 
-  const idx = (p.variants || []).findIndex((v) => v.sku === variant.sku);
-  if (idx >= 0) p.variants[idx] = variant;
-  else p.variants.push(variant);
+  if (errors.length) return res.status(400).send(errors.join("\n"));
 
   await p.save();
   res.redirect(`/admin/products/${p._id}`);
@@ -236,7 +256,7 @@ r.get("/settings", adminOnly, async (req, res) => {
   res.render("admin/settings", { settings });
 });
 
-// ✅ FIX: don't crash if Settings doc doesn't exist
+// ✅ won’t crash if settings doc doesn't exist
 r.post("/settings", adminOnly, async (req, res) => {
   let s = await Settings.findOne();
   if (!s) s = await Settings.create({ stripeFees: {} });
