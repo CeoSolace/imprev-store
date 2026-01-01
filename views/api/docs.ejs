@@ -1,0 +1,256 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>API Docs • Imprev Clothing</title>
+  <link rel="stylesheet" href="/style.css" />
+  <style>
+    .apiWrap{
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 18px;
+    }
+    .apiHero{
+      border-radius: 20px;
+      border:1px solid rgba(255,255,255,.08);
+      background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+      box-shadow: 0 10px 30px rgba(0,0,0,.35);
+      padding: 22px;
+    }
+    .apiTitle{
+      font-size: 36px;
+      font-weight: 1000;
+      letter-spacing: -.8px;
+    }
+    .apiSub{
+      margin-top: 10px;
+      color: rgba(238,241,255,.72);
+      max-width: 70ch;
+      line-height: 1.55;
+    }
+
+    .apiSection{
+      margin-top: 18px;
+      border-radius: 18px;
+      border:1px solid rgba(255,255,255,.08);
+      background: rgba(0,0,0,.18);
+      padding: 18px;
+    }
+
+    .apiH{
+      font-weight: 1000;
+      font-size: 18px;
+      letter-spacing: -.2px;
+    }
+
+    .apiP{
+      margin-top: 6px;
+      color: rgba(238,241,255,.72);
+      line-height: 1.5;
+      font-size: 14px;
+    }
+
+    .endpoint{
+      margin-top: 14px;
+      border-radius: 14px;
+      border:1px solid rgba(255,255,255,.08);
+      background: rgba(0,0,0,.22);
+      padding: 14px;
+    }
+
+    .epTop{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+      font-weight: 900;
+    }
+
+    .method{
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      letter-spacing:.4px;
+      border:1px solid rgba(255,255,255,.12);
+    }
+    .GET{ background: rgba(46,229,157,.14); color: rgba(210,255,238,.95); }
+    .POST{ background: rgba(124,92,255,.18); color: rgba(230,225,255,.95); }
+
+    .path{
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 13px;
+      color: rgba(238,241,255,.85);
+    }
+
+    pre{
+      margin-top: 10px;
+      padding: 12px;
+      border-radius: 12px;
+      border:1px solid rgba(255,255,255,.08);
+      background: rgba(0,0,0,.35);
+      color: rgba(238,241,255,.92);
+      font-size: 12px;
+      overflow:auto;
+    }
+
+    .warn{
+      margin-top: 10px;
+      padding: 12px;
+      border-radius: 14px;
+      border:1px solid rgba(255,186,90,.28);
+      background: rgba(255,186,90,.08);
+      color: rgba(255,226,180,.95);
+      font-weight: 900;
+      font-size: 12px;
+    }
+
+    .danger{
+      margin-top: 10px;
+      padding: 12px;
+      border-radius: 14px;
+      border:1px solid rgba(255,90,90,.28);
+      background: rgba(255,90,90,.08);
+      color: rgba(255,220,220,.95);
+      font-weight: 900;
+      font-size: 12px;
+    }
+  </style>
+</head>
+
+<body>
+  <header class="top">
+    <div class="topInner">
+      <a class="brand" href="/">
+        <span class="brandMark"></span>
+        <span>Imprev Clothing</span>
+      </a>
+      <nav class="nav">
+        <a href="/">Store</a>
+        <a href="/admin">Admin</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="apiWrap">
+    <section class="apiHero">
+      <div class="apiTitle">Imprev Clothing API</div>
+      <div class="apiSub">
+        Minimal, private, and intentionally boring.
+        This API exists to power the store, admin panel, and Stripe webhooks.
+        It is <strong>not</strong> a public SaaS API.
+      </div>
+    </section>
+
+    <section class="apiSection">
+      <div class="apiH">Authentication</div>
+      <div class="apiP">
+        There is no public authentication system.
+        Admin routes are protected by HTTP-only cookies issued after login.
+      </div>
+
+      <div class="warn">
+        Do not attempt to brute-force admin routes.
+        Rate limits are enforced and logs are monitored.
+      </div>
+    </section>
+
+    <section class="apiSection">
+      <div class="apiH">Public Endpoints</div>
+
+      <div class="endpoint">
+        <div class="epTop">
+          <span class="method GET">GET</span>
+          <span class="path">/</span>
+        </div>
+        <div class="apiP">Storefront homepage. Renders products server-side.</div>
+      </div>
+
+      <div class="endpoint">
+        <div class="epTop">
+          <span class="method GET">GET</span>
+          <span class="path">/p/:id</span>
+        </div>
+        <div class="apiP">Product page with variants and checkout form.</div>
+      </div>
+
+      <div class="endpoint">
+        <div class="epTop">
+          <span class="method POST">POST</span>
+          <span class="path">/checkout</span>
+        </div>
+        <div class="apiP">
+          Creates a Stripe Checkout session and calculates pricing
+          (manufacturing + shipping + Stripe fees + profit).
+        </div>
+
+        <pre>{
+  "productId": "mongo_id",
+  "variantSku": "AS5082-FB-S",
+  "size": "M",
+  "qty": 1,
+  "country": "GB",
+  "email": "user@example.com"
+}</pre>
+      </div>
+    </section>
+
+    <section class="apiSection">
+      <div class="apiH">Admin Endpoints</div>
+      <div class="apiP">
+        All admin routes require a valid admin session cookie.
+      </div>
+
+      <div class="endpoint">
+        <div class="epTop">
+          <span class="method POST">POST</span>
+          <span class="path">/admin/login</span>
+        </div>
+        <div class="apiP">Authenticate admin and issue session cookie.</div>
+      </div>
+
+      <div class="endpoint">
+        <div class="epTop">
+          <span class="method POST">POST</span>
+          <span class="path">/admin/products/:id/variant</span>
+        </div>
+        <div class="apiP">
+          Bulk upsert product variants (SKU-based).
+          Required schema fields are enforced server-side.
+        </div>
+      </div>
+    </section>
+
+    <section class="apiSection">
+      <div class="apiH">Webhooks</div>
+
+      <div class="endpoint">
+        <div class="epTop">
+          <span class="method POST">POST</span>
+          <span class="path">/webhooks/stripe</span>
+        </div>
+        <div class="apiP">
+          Stripe webhook endpoint. Uses signature verification.
+          Handles checkout completion and order creation.
+        </div>
+      </div>
+
+      <div class="danger">
+        This endpoint expects a raw body and a valid Stripe signature.
+        Do not call it manually unless you enjoy debugging cryptographic errors.
+      </div>
+    </section>
+
+    <section class="apiSection">
+      <div class="apiH">Notes</div>
+      <div class="apiP">
+        • This API is not versioned.  
+        • Breaking changes may occur without notice.  
+        • Intended usage is internal only.
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">© Imprev Clothing</footer>
+</body>
+</html>
