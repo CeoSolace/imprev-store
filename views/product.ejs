@@ -85,10 +85,18 @@
       cursor:pointer;
       position:relative;
       transition: .15s ease;
+
+      /* 🔧 remove ugly button defaults */
+      padding: 0;
+      outline: none;
     }
     .thumb:hover{
       transform: translateY(-1px);
       border-color: rgba(124,92,255,.35);
+    }
+    .thumb:focus{
+      border-color: rgba(124,92,255,.70);
+      box-shadow: 0 0 0 4px rgba(124,92,255,.12);
     }
     .thumb img{
       width:100%;
@@ -149,6 +157,38 @@
       border-color: rgba(46,229,157,.22);
       background: rgba(46,229,157,.12);
       color: rgba(210,255,238,.95);
+    }
+
+    /* Discord mini card */
+    .discordBox{
+      margin-top: 12px;
+      padding: 14px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: linear-gradient(135deg, rgba(124,92,255,.14), rgba(46,229,157,.08));
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 12px;
+    }
+    .discordLeft{ display:flex; flex-direction:column; gap:6px; }
+    .discordTitle{ font-weight: 1000; letter-spacing:-.2px; }
+    .discordDesc{ color: rgba(238,241,255,.72); font-size: 12px; line-height: 1.35; }
+    .discordBtn{
+      padding: 10px 12px;
+      border-radius: 14px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.20);
+      color: rgba(238,241,255,.92);
+      font-weight: 950;
+      text-decoration:none;
+      white-space: nowrap;
+      transition:.15s ease;
+    }
+    .discordBtn:hover{
+      transform: translateY(-1px);
+      border-color: rgba(124,92,255,.35);
+      background: rgba(0,0,0,.28);
     }
 
     .formBox{
@@ -231,6 +271,7 @@
       </a>
       <nav class="nav">
         <a href="/admin">Admin</a>
+        <a href="https://discord.gg/eUd4qP4DV8" target="_blank" rel="noopener noreferrer">Discord</a>
       </nav>
     </div>
   </header>
@@ -256,11 +297,7 @@
       <div class="pWrap">
         <div class="gallery">
           <div class="galleryMain">
-            <img
-              id="mainImg"
-              src="<%= imgs.length ? imgs[0] : '' %>"
-              alt=""
-            />
+            <img id="mainImg" src="<%= imgs.length ? imgs[0] : '' %>" alt="" />
             <% if (imgs.length > 1) { %>
               <div class="galleryHint">Tap thumbnails or use ← →</div>
             <% } %>
@@ -291,6 +328,14 @@
               <span class="chip chipHot">Drop</span>
               <span class="chip">Print-on-demand</span>
               <span class="chip">Ships global</span>
+            </div>
+
+            <div class="discordBox">
+              <div class="discordLeft">
+                <div class="discordTitle">Join the Imprev Discord</div>
+                <div class="discordDesc">Drops, updates, early access, and support.</div>
+              </div>
+              <a class="discordBtn" href="https://discord.gg/eUd4qP4DV8" target="_blank" rel="noopener noreferrer">Join</a>
             </div>
           </div>
 
@@ -372,7 +417,6 @@
               t.addEventListener("click", () => setIndex(Number(t.dataset.i || 0)));
             });
 
-            // keyboard arrows
             document.addEventListener("keydown", (e) => {
               if (e.key === "ArrowLeft") setIndex(idx - 1);
               if (e.key === "ArrowRight") setIndex(idx + 1);
