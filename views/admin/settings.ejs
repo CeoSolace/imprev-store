@@ -1,0 +1,65 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Settings • Imprev Admin</title>
+  <link rel="stylesheet" href="/admin.css" />
+</head>
+<body class="a">
+  <div class="bar">
+    <div class="logo"><a href="/admin">Imprev Admin</a></div>
+    <div class="barLinks">
+      <a href="/admin/products">Products</a>
+      <a href="/admin/codes">Codes</a>
+      <a href="/admin/orders">Orders</a>
+    </div>
+  </div>
+
+  <div class="wrapA">
+    <h1>Stripe Fee Settings</h1>
+    <p class="muted">Used to auto-calculate retail price so profit stays intact after Stripe fees.</p>
+
+    <form method="POST" action="/admin/settings" class="panel2">
+      <% const f = settings?.stripeFees || {}; %>
+
+      <h3>UK</h3>
+      <div class="grid3">
+        <input name="ukCur" value="<%= f.UK?.currency || 'GBP' %>" placeholder="GBP" />
+        <input name="ukPct" value="<%= f.UK?.percent ?? 0.029 %>" placeholder="0.029" />
+        <input name="ukFix" value="<%= f.UK?.fixed ?? 30 %>" placeholder="30" />
+      </div>
+
+      <h3>EU</h3>
+      <div class="grid3">
+        <input name="euCur" value="<%= f.EU?.currency || 'EUR' %>" />
+        <input name="euPct" value="<%= f.EU?.percent ?? 0.029 %>" />
+        <input name="euFix" value="<%= f.EU?.fixed ?? 30 %>" />
+      </div>
+
+      <h3>US</h3>
+      <div class="grid3">
+        <input name="usCur" value="<%= f.US?.currency || 'USD' %>" />
+        <input name="usPct" value="<%= f.US?.percent ?? 0.029 %>" />
+        <input name="usFix" value="<%= f.US?.fixed ?? 30 %>" />
+      </div>
+
+      <h3>TR</h3>
+      <div class="grid3">
+        <input name="trCur" value="<%= f.TR?.currency || 'TRY' %>" />
+        <input name="trPct" value="<%= f.TR?.percent ?? 0.029 %>" />
+        <input name="trFix" value="<%= f.TR?.fixed ?? 30 %>" />
+      </div>
+
+      <h3>ROW</h3>
+      <div class="grid3">
+        <input name="rowCur" value="<%= f.ROW?.currency || 'USD' %>" />
+        <input name="rowPct" value="<%= f.ROW?.percent ?? 0.029 %>" />
+        <input name="rowFix" value="<%= f.ROW?.fixed ?? 30 %>" />
+      </div>
+
+      <button type="submit" style="margin-top:14px;">Save Settings</button>
+    </form>
+  </div>
+</body>
+</html>

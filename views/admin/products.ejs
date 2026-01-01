@@ -1,0 +1,50 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Products • Imprev Admin</title>
+  <link rel="stylesheet" href="/admin.css" />
+</head>
+<body class="a">
+  <div class="bar">
+    <div class="logo"><a href="/admin">Imprev Admin</a></div>
+    <div class="barLinks">
+      <a href="/admin/products/new">+ New Product</a>
+      <a href="/admin/codes">Codes</a>
+      <a href="/admin/orders">Orders</a>
+      <a href="/admin/settings">Settings</a>
+    </div>
+  </div>
+
+  <div class="wrapA">
+    <h1>Products</h1>
+    <p class="muted">Products start inactive. Add variants, then enable.</p>
+
+    <div class="list">
+      <% products.forEach(p => { %>
+        <div class="row">
+          <div>
+            <div class="title">
+              <a href="/admin/products/<%= p._id %>"><%= p.name %></a>
+              <span class="pill"><%= p.active ? "active" : "inactive" %></span>
+            </div>
+            <div class="muted">
+              Variants: <%= p.variants?.length || 0 %>
+            </div>
+          </div>
+
+          <div class="actions">
+            <form method="POST" action="/admin/products/<%= p._id %>/toggle">
+              <button type="submit"><%= p.active ? "Disable" : "Enable" %></button>
+            </form>
+            <form method="POST" action="/admin/products/<%= p._id %>/delete" onsubmit="return confirm('Delete product?');">
+              <button type="submit" class="danger">Delete</button>
+            </form>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  </div>
+</body>
+</html>

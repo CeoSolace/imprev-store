@@ -1,0 +1,52 @@
+import "dotenv/config";
+import express from "express";
+import helmet from "helmet";
+import morgan from "morgan";
+import cookieParser from "cookie-parser";
+import rateLimit from "express-rate-limit";
+import path from "path";
+import { fileURLToPath } from "url";
+
+import { connectDb } from "./src/db.js";
+import publicRoutes from "./src/routes/public.js";
+import adminRoutes from "./src/routes/admin.js";
+import webhookRoutes from "./src/routes/webhooks.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const app = express();
+
+app.set("view engine", "ejs");
+app.set("views", path.join(__dirname, "views"));
+
+app.use(helmet({ contentSecurityPolicy: false }));
+app.use(morgan("tiny"));
+app.use(cookieParser());
+
+app.use(rateLimit({
+  windowMs: 60_000,
+  limit: 180,
+  standardHeaders: true,
+  legacyHeaders: false
+}));
+
+app.use(express.static(path.join(__dirname, "public")));
+
+app.use("/webhooks", webhookRoutes);
+
+app.use(express.urlencoded({ extended: true, limit: "2mb" }));
+app.use(express.json({ limit: "2mb" }));
+
+app.use("/", publicRoutes);
+app.use("/admin", adminRoutes);
+
+app.use((err, req, res, next) => {
+  console.error(err);
+  res.status(500).send("Server error.");
+});
+
+await connectDb();
+
+const port = Number(process.env.PORT || 10000);
+app.listen(port, () => console.log(`Imprev Clothing running on :${port}`));

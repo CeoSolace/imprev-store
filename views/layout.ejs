@@ -1,0 +1,22 @@
+<!doctype html>
+<html>
+<head>
+  <%- include('partials_head') %>
+  <title><%= title || "Imprev Clothing" %></title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <header class="top">
+    <a class="brand" href="/">Imprev Clothing</a>
+    <nav class="nav">
+      <a href="/admin/login">Admin</a>
+    </nav>
+  </header>
+
+  <main class="wrap">
+    <%- body %>
+  </main>
+
+  <footer class="foot">© Imprev Clothing</footer>
+</body>
+</html>

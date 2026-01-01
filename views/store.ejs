@@ -1,0 +1,370 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Imprev Clothing</title>
+  <link rel="stylesheet" href="/style.css" />
+  <style>
+    /* ---- Layout polish (safe, doesn't break your existing style.css) ---- */
+    .hero2{
+      display:grid;
+      grid-template-columns: 1.15fr .85fr;
+      gap: 14px;
+      align-items: stretch;
+      margin: 10px 0 18px;
+    }
+    @media (max-width: 900px){ .hero2{ grid-template-columns: 1fr; } }
+
+    .heroMain{
+      border-radius: 20px;
+      border:1px solid rgba(255,255,255,.08);
+      background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+      box-shadow: 0 10px 30px rgba(0,0,0,.35);
+      overflow:hidden;
+      padding: 22px;
+      min-height: 240px;
+      position:relative;
+    }
+    .heroMain:before{
+      content:"";
+      position:absolute;
+      inset:-60px;
+      background:
+        radial-gradient(520px 260px at 25% 10%, rgba(124,92,255,.28), transparent 60%),
+        radial-gradient(420px 240px at 85% 20%, rgba(46,229,157,.14), transparent 60%);
+      pointer-events:none;
+    }
+    .heroMain > *{ position:relative; }
+
+    .kicker{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.18);
+      color: rgba(238,241,255,.75);
+      font-weight: 900;
+      font-size: 13px;
+    }
+    .kDot{
+      width:10px;height:10px;border-radius:999px;
+      background: linear-gradient(135deg, rgba(46,229,157,1), rgba(124,92,255,1));
+      box-shadow: 0 0 0 4px rgba(124,92,255,.12);
+    }
+
+    .heroTitle{
+      margin: 10px 0 0;
+      font-size: 44px;
+      letter-spacing: -1px;
+      line-height: 1.05;
+      font-weight: 1000;
+    }
+    @media (max-width: 520px){ .heroTitle{ font-size: 36px; } }
+
+    .heroSub{
+      margin: 10px 0 0;
+      color: rgba(238,241,255,.72);
+      line-height: 1.55;
+      max-width: 70ch;
+      font-size: 15px;
+    }
+
+    .ctaRow{
+      margin-top: 16px;
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+    .cta{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border:1px solid rgba(255,255,255,.10);
+      background: linear-gradient(135deg, rgba(124,92,255,.95), rgba(124,92,255,.55));
+      color:#0b0d12;
+      font-weight: 950;
+      letter-spacing:.2px;
+      cursor:pointer;
+      transition:.15s ease;
+      text-decoration:none;
+    }
+    .cta:hover{ transform: translateY(-1px); filter: brightness(1.05); }
+    .ctaGhost{
+      background: rgba(255,255,255,.03);
+      color: rgba(238,241,255,.9);
+      border-color: rgba(255,255,255,.10);
+    }
+
+    .heroSide{
+      border-radius: 20px;
+      border:1px solid rgba(255,255,255,.08);
+      background: rgba(255,255,255,.03);
+      box-shadow: 0 10px 30px rgba(0,0,0,.30);
+      padding: 16px;
+      display:flex;
+      flex-direction:column;
+      gap: 12px;
+    }
+
+    .search{
+      width: 100%;
+      padding: 12px 12px;
+      border-radius: 14px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.25);
+      color: rgba(238,241,255,.95);
+      outline:none;
+    }
+    .search:focus{
+      border-color: rgba(124,92,255,.55);
+      box-shadow: 0 0 0 4px rgba(124,92,255,.15);
+    }
+
+    .miniGrid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+    }
+    .stat{
+      border-radius: 16px;
+      border:1px solid rgba(255,255,255,.08);
+      background: rgba(0,0,0,.18);
+      padding: 12px;
+    }
+    .statTop{ color: rgba(238,241,255,.65); font-weight: 900; font-size: 12px; text-transform: uppercase; letter-spacing:.25px; }
+    .statVal{ margin-top:6px; font-weight: 1000; letter-spacing:-.4px; }
+    .statHint{ margin-top:6px; color: rgba(238,241,255,.55); font-size: 12px; line-height: 1.35; }
+
+    /* ---- Cards: no bottom overlay, no image gradient ---- */
+    .gridBetter{
+      display:grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 14px;
+      margin-top: 14px;
+    }
+    .cardBetter{
+      border-radius: 20px;
+      border:1px solid rgba(255,255,255,.08);
+      background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      overflow:hidden;
+      box-shadow: 0 6px 18px rgba(0,0,0,.28);
+      transition: .15s ease;
+      position:relative;
+      text-decoration:none;
+      color: inherit;
+    }
+    .cardBetter:hover{
+      transform: translateY(-2px);
+      border-color: rgba(124,92,255,.35);
+    }
+    .imgWrap{
+      height: 260px;
+      background: rgba(0,0,0,.25);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+    .imgWrap img{
+      width:100%;
+      height:100%;
+      object-fit: cover;
+      display:block;
+    }
+    .imgPh{
+      width:100%;
+      height:100%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      color: rgba(238,241,255,.55);
+      font-weight: 900;
+      letter-spacing:.2px;
+    }
+
+    .cardBody2{ padding: 14px; }
+    .cardTitle{ font-weight: 1000; letter-spacing: -.2px; font-size: 18px; }
+    .cardDesc{
+      margin-top: 8px;
+      color: rgba(238,241,255,.68);
+      line-height: 1.5;
+      font-size: 13px;
+
+      /* clamp so it doesn't stretch */
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      min-height: 39px;
+    }
+
+    .chips{
+      margin-top: 12px;
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+    .chip{
+      padding: 7px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.18);
+      color: rgba(238,241,255,.80);
+      font-weight: 900;
+      font-size: 12px;
+    }
+    .chipHot{
+      border-color: rgba(46,229,157,.22);
+      background: rgba(46,229,157,.12);
+      color: rgba(210,255,238,.95);
+    }
+
+    .cardMeta{
+      margin-top: 12px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+    }
+    .metaHint{ color: rgba(238,241,255,.55); font-size: 12px; font-weight: 900; }
+    .arrow{
+      width:34px;height:34px;border-radius: 14px;
+      display:flex;align-items:center;justify-content:center;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.03);
+      transition:.15s ease;
+    }
+    .cardBetter:hover .arrow{
+      border-color: rgba(124,92,255,.35);
+      transform: translateX(1px);
+    }
+  </style>
+</head>
+
+<body>
+  <header class="top">
+    <div class="topInner">
+      <a class="brand" href="/">
+        <span class="brandMark"></span>
+        <span>Imprev Clothing</span>
+      </a>
+      <nav class="nav">
+        <a href="/admin">Admin</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="hero2">
+      <div class="heroMain">
+        <div class="kicker"><span class="kDot"></span> Drop-ready • Printful fulfillment</div>
+        <h1 class="heroTitle">Imprev Clothing</h1>
+        <p class="heroSub">
+          Clean drops, global shipping, and pricing that protects your margin from Stripe fees.
+          No inventory. No “oops I just subsidized orders”.
+        </p>
+
+        <div class="ctaRow">
+          <a class="cta" href="#products">Shop drops</a>
+          <a class="cta ctaGhost" href="/admin">Manage products</a>
+        </div>
+      </div>
+
+      <aside class="heroSide">
+        <input class="search" id="q" placeholder="Search drops…" autocomplete="off" />
+
+        <div class="miniGrid">
+          <div class="stat">
+            <div class="statTop">Fulfillment</div>
+            <div class="statVal">Printful</div>
+            <div class="statHint">Production + shipping handled automatically.</div>
+          </div>
+          <div class="stat">
+            <div class="statTop">Pricing</div>
+            <div class="statVal">Fee-safe</div>
+            <div class="statHint">Retail covers costs + fees + profit.</div>
+          </div>
+        </div>
+
+        <div class="miniGrid">
+          <div class="stat">
+            <div class="statTop">Drops</div>
+            <div class="statVal"><%= (products && products.length) ? products.length : 0 %></div>
+            <div class="statHint">Live products available right now.</div>
+          </div>
+          <div class="stat">
+            <div class="statTop">Shipping</div>
+            <div class="statVal">Global</div>
+            <div class="statHint">Wherever Printful ships.</div>
+          </div>
+        </div>
+      </aside>
+    </section>
+
+    <div id="products" class="gridBetter">
+      <% if (products && products.length) { %>
+        <% for (let i = 0; i < products.length; i++) { const p = products[i]; %>
+          <a class="cardBetter productCard"
+             data-name="<%= (p.name || '').toLowerCase() %>"
+             data-desc="<%= (p.description || '').toLowerCase() %>"
+             href="/p/<%= p._id %>">
+
+            <div class="imgWrap">
+              <% if (p.images && p.images[0]) { %>
+                <img src="<%= p.images[0] %>" alt="">
+              <% } else { %>
+                <div class="imgPh">No image</div>
+              <% } %>
+            </div>
+
+            <div class="cardBody2">
+              <div class="cardTitle"><%= p.name %></div>
+              <div class="cardDesc"><%= p.description %></div>
+
+              <div class="chips">
+                <span class="chip chipHot">Drop</span>
+                <span class="chip">No inventory</span>
+                <span class="chip">Ships global</span>
+              </div>
+
+              <div class="cardMeta">
+                <div class="metaHint">View product</div>
+                <div class="arrow">→</div>
+              </div>
+            </div>
+          </a>
+        <% } %>
+      <% } else { %>
+        <div class="heroMain" style="min-height:auto;">
+          <h2 class="heroTitle" style="font-size:28px;">No products yet</h2>
+          <p class="heroSub">Go to Admin, add a product + variants, then enable it.</p>
+          <div class="ctaRow">
+            <a class="cta" href="/admin">Open Admin</a>
+          </div>
+        </div>
+      <% } %>
+    </div>
+  </main>
+
+  <footer class="foot">© Imprev Clothing</footer>
+
+  <script>
+    const q = document.getElementById("q");
+    const cards = Array.from(document.querySelectorAll(".productCard"));
+    function run(){
+      const v = (q.value || "").trim().toLowerCase();
+      for (const c of cards){
+        const hay = (c.dataset.name || "") + " " + (c.dataset.desc || "");
+        c.style.display = (!v || hay.includes(v)) ? "" : "none";
+      }
+    }
+    q && q.addEventListener("input", run);
+  </script>
+</body>
+</html>

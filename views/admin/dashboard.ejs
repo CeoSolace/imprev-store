@@ -1,0 +1,38 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Dashboard • Imprev Admin</title>
+  <link rel="stylesheet" href="/admin.css" />
+</head>
+<body class="a">
+  <div class="bar">
+    <div class="logo">Imprev Admin</div>
+    <form method="POST" action="/admin/logout"><button>Logout</button></form>
+  </div>
+
+  <div class="wrapA">
+    <h1>Dashboard</h1>
+    <p class="muted">If something breaks, it’s probably a missing Printful Variant ID or webhook config.</p>
+
+    <div class="cards">
+      <div class="cardA">
+        <div class="big"><%= products %></div>
+        <div class="muted">Products</div>
+      </div>
+      <div class="cardA">
+        <div class="big"><%= orders %></div>
+        <div class="muted">Orders</div>
+      </div>
+    </div>
+
+    <div class="navA">
+      <a href="/admin/products">Products</a>
+      <a href="/admin/codes">Codes</a>
+      <a href="/admin/orders">Orders</a>
+      <a href="/admin/settings">Stripe Fee Settings</a>
+    </div>
+  </div>
+</body>
+</html>

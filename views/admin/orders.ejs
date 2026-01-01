@@ -1,0 +1,51 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Orders • Imprev Admin</title>
+  <link rel="stylesheet" href="/admin.css" />
+</head>
+<body class="a">
+  <div class="bar">
+    <div class="logo"><a href="/admin">Imprev Admin</a></div>
+    <div class="barLinks">
+      <a href="/admin/products">Products</a>
+      <a href="/admin/codes">Codes</a>
+      <a href="/admin/settings">Settings</a>
+    </div>
+  </div>
+
+  <div class="wrapA">
+    <h1>Orders</h1>
+    <p class="muted">Paid → webhook → Printful order. If status is failed, check token scopes and variant IDs.</p>
+
+    <div class="list">
+      <% orders.forEach(o => { %>
+        <div class="row">
+          <div>
+            <div class="title">
+              <%= o.status %>
+              <span class="pill"><%= o.currency %> <%= (o.amountTotal/100).toFixed(2) %></span>
+            </div>
+            <div class="muted">
+              <%= o.email || "no-email" %> • <%= o.createdAt %>
+              <% if (o.printfulOrderId) { %> • Printful: <%= o.printfulOrderId %> <% } %>
+            </div>
+            <div class="muted">
+              Ref: <%= o.referenceCode || "-" %> • Referral: <%= o.referralCode || "-" %>
+            </div>
+          </div>
+
+          <div class="actions">
+            <details>
+              <summary>Details</summary>
+              <pre><%= JSON.stringify(o, null, 2) %></pre>
+            </details>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  </div>
+</body>
+</html>
