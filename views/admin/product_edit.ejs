@@ -62,6 +62,7 @@
       color: rgba(255,220,220,.95);
     }
     .dangerBtn:hover{ filter: brightness(1.05); }
+
     .mutedBox{
       margin-top: 10px;
       padding: 12px;
@@ -155,9 +156,11 @@
                 <th>SKU</th>
                 <th>Name</th>
                 <th>Sizes</th>
-                <th>Printful Variant ID</th>
-                <th>Costs (GBP)</th>
-                <th>Costs (USD)</th>
+                <th>Printful Variant</th>
+                <th>Manufacturing (GBP)</th>
+                <th>UK (GBP)</th>
+                <th>US (USD)</th>
+                <th>EU/TR/ROW</th>
                 <th></th>
               </tr>
             </thead>
@@ -168,14 +171,19 @@
                   <td><%= v.name %></td>
                   <td><%= (v.sizes || []).join(", ") %></td>
                   <td><%= v.printfulVariantId %></td>
+                  <td><%= Number(v.costs?.manufacturing ?? 0).toFixed(2) %></td>
                   <td>
-                    Manu: <%= (v.costs?.manufacturing ?? 0).toFixed(2) %><br>
-                    Ship UK: <%= (v.costs?.shipping?.UK ?? 0).toFixed(2) %><br>
-                    Profit UK: <%= (v.profit?.UK ?? 0).toFixed(2) %>
+                    Ship: <%= Number(v.costs?.shipping?.UK ?? 0).toFixed(2) %><br>
+                    Profit: <%= Number(v.profit?.UK ?? 0).toFixed(2) %>
                   </td>
                   <td>
-                    Ship US: <%= (v.costs?.shipping?.US ?? 0).toFixed(2) %><br>
-                    Profit US: <%= (v.profit?.US ?? 0).toFixed(2) %>
+                    Ship: <%= Number(v.costs?.shipping?.US ?? 0).toFixed(2) %><br>
+                    Profit: <%= Number(v.profit?.US ?? 0).toFixed(2) %>
+                  </td>
+                  <td style="color: rgba(238,241,255,.65); font-weight:900;">
+                    EU Ship: <%= Number(v.costs?.shipping?.EU ?? 0).toFixed(2) %> / Profit: <%= Number(v.profit?.EU ?? 0).toFixed(2) %><br>
+                    TR Ship: <%= Number(v.costs?.shipping?.TR ?? 0).toFixed(2) %> / Profit: <%= Number(v.profit?.TR ?? 0).toFixed(2) %><br>
+                    ROW Ship: <%= Number(v.costs?.shipping?.ROW ?? 0).toFixed(2) %> / Profit: <%= Number(v.profit?.ROW ?? 0).toFixed(2) %>
                   </td>
                   <td style="white-space:nowrap;">
                     <form method="POST" action="/admin/products/<%= product._id %>/variant-delete" onsubmit="return confirm('Delete variant <%= v.sku %>?');">
@@ -193,11 +201,14 @@
 
     <section class="box" style="margin-top:14px;">
       <div class="h">Add / Update Variants (Bulk)</div>
-      <div class="muted" style="margin-top:6px;">Add multiple rows, submit once. Existing SKUs will be updated.</div>
+      <div class="muted" style="margin-top:6px;">
+        Add multiple rows, submit once. Existing SKUs will be updated.
+        EU/TR/ROW are kept at 0 by default to satisfy your schema.
+      </div>
 
       <div class="mutedBox">
-        You asked for GBP + USD only.
-        Manufacturing is treated as GBP cost (same base product), then you set Shipping + Profit for UK and US separately.
+        Schema requires UK/EU/US/TR/ROW. You can ignore EU/TR/ROW for now.
+        If you want them later, change the hidden fields to visible inputs.
       </div>
 
       <form method="POST" action="/admin/products/<%= product._id %>/variant" id="variantsForm" style="margin-top:12px;">
@@ -258,6 +269,15 @@
                 <button type="button" class="btn btnSmall dangerBtn removeRow">Remove row</button>
               </div>
             </div>
+
+            <!-- ✅ schema-required fields defaulted -->
+            <input type="hidden" name="shipEU" value="0">
+            <input type="hidden" name="shipTR" value="0">
+            <input type="hidden" name="shipROW" value="0">
+
+            <input type="hidden" name="profitEU" value="0">
+            <input type="hidden" name="profitTR" value="0">
+            <input type="hidden" name="profitROW" value="0">
           </div>
         </div>
 
@@ -283,7 +303,9 @@
       btn.addEventListener("click", () => {
         const rows = container.querySelectorAll(".variantRow");
         if (rows.length <= 1) {
-          row.querySelectorAll("input").forEach(i => i.value = "");
+          row.querySelectorAll("input").forEach(i => {
+            if (i.type !== "hidden") i.value = "";
+          });
         } else {
           row.remove();
         }
@@ -291,19 +313,24 @@
       });
     }
 
-    // wire initial row
-    wireRow(container.querySelector(".variantRow"));
-    updateCount();
-
-    addBtn.addEventListener("click", () => {
+    function cloneRow(){
       const base = container.querySelector(".variantRow");
       const clone = base.cloneNode(true);
-      clone.querySelectorAll("input").forEach(i => i.value = "");
+
+      clone.querySelectorAll("input").forEach(i => {
+        // keep hidden defaults intact, clear everything else
+        if (i.type !== "hidden") i.value = "";
+      });
+
       container.appendChild(clone);
       wireRow(clone);
       updateCount();
       clone.scrollIntoView({ behavior: "smooth", block: "center" });
-    });
+    }
+
+    wireRow(container.querySelector(".variantRow"));
+    updateCount();
+    addBtn.addEventListener("click", cloneRow);
   </script>
 </body>
 </html>
