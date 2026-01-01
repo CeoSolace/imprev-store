@@ -17,30 +17,28 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
-// Behind Render / reverse proxies
+// Render / reverse proxies (Render, Cloudflare, etc.)
 app.set("trust proxy", 1);
 app.disable("x-powered-by");
 
-// -------------------- Views --------------------
+// Views
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
-// -------------------- Logging --------------------
+// Logging
 app.use(morgan(process.env.NODE_ENV === "production" ? "tiny" : "dev"));
 
-// -------------------- Timeouts (anti slowloris-ish) --------------------
+// Timeouts (basic slowloris resistance)
 app.use((req, res, next) => {
   req.setTimeout(15_000);
   res.setTimeout(15_000);
   next();
 });
 
-// -------------------- HTTPS only (prod) --------------------
+// Force HTTPS in production (via proxy header)
 function enforceHttps(req, res, next) {
   if (process.env.NODE_ENV !== "production") return next();
-  const proto = String(req.headers["x-forwarded-proto"] || "")
-    .split(",")[0]
-    .trim();
+  const proto = String(req.headers["x-forwarded-proto"] || "").split(",")[0].trim();
   if (proto && proto !== "https") {
     const host = req.headers.host;
     return res.redirect(301, `https://${host}${req.originalUrl}`);
@@ -49,9 +47,9 @@ function enforceHttps(req, res, next) {
 }
 app.use(enforceHttps);
 
-// -------------------- Security headers (CSP + COEP/COOP/CORP) --------------------
-// You use inline <style>/<script> in EJS, so CSP must allow unsafe-inline
-// unless you implement nonces everywhere.
+// Security headers
+// CSP allows inline because your EJS uses inline <style>/<script>.
+// COEP is OFF because it breaks Cloudinary images. CORP is cross-origin to allow them.
 app.use(
   helmet({
     contentSecurityPolicy: {
@@ -62,21 +60,21 @@ app.use(
         frameAncestors: ["'none'"],
         formAction: ["'self'"],
         objectSrc: ["'none'"],
-        imgSrc: ["'self'", "data:", "https:"], // allow Cloudinary
-        connectSrc: ["'self'", "https:"],       // Stripe redirects etc.
+        imgSrc: ["'self'", "data:", "https:"], // allow Cloudinary + https images
+        connectSrc: ["'self'", "https:"],
         fontSrc: ["'self'", "data:", "https:"],
         styleSrc: ["'self'", "'unsafe-inline'", "https:"],
         scriptSrc: ["'self'", "'unsafe-inline'", "https:"],
       },
     },
-    crossOriginEmbedderPolicy: true,                 // COEP
-    crossOriginOpenerPolicy: { policy: "same-origin" }, // COOP
-    crossOriginResourcePolicy: { policy: "same-site" }, // CORP
+    crossOriginEmbedderPolicy: false, // ✅ DO NOT break external images
+    crossOriginOpenerPolicy: { policy: "same-origin" },
+    crossOriginResourcePolicy: { policy: "cross-origin" }, // ✅ allow external resources
     referrerPolicy: { policy: "strict-origin-when-cross-origin" },
-    crossOriginEmbedderPolicy: true,
   })
 );
 
+// HSTS (only in production)
 if (process.env.NODE_ENV === "production") {
   app.use(
     helmet.hsts({
@@ -87,10 +85,10 @@ if (process.env.NODE_ENV === "production") {
   );
 }
 
-// -------------------- Cookies --------------------
+// Cookies
 app.use(cookieParser());
 
-// -------------------- Rate limits (global + burst + route specific) --------------------
+// Rate limits (global + burst + route-specific)
 const globalLimiter = rateLimit({
   windowMs: 60_000,
   limit: 120,
@@ -126,19 +124,16 @@ const checkoutLimiter = rateLimit({
 app.use(globalLimiter);
 app.use(burstLimiter);
 
-// -------------------- Cheap garbage filters --------------------
+// Cheap garbage filter
 app.use((req, res, next) => {
-  // block absurd URL lengths
   if ((req.originalUrl || "").length > 2000) return res.status(414).send("URI too long.");
   next();
 });
 
-// -------------------- Static --------------------
+// Static files (favicon.ico, style.css, etc.)
 app.use(express.static(path.join(__dirname, "public"), { maxAge: "1h", etag: true }));
 
-// -------------------- Origin/Referer guard (CSRF-ish) --------------------
-// Blocks cross-site POSTs from random sites.
-// Webhooks must bypass this.
+// Origin/Referer guard (blocks cross-site POSTs). Webhooks exempt.
 function originGuard(req, res, next) {
   const m = req.method.toUpperCase();
   if (m === "GET" || m === "HEAD" || m === "OPTIONS") return next();
@@ -156,37 +151,38 @@ function originGuard(req, res, next) {
 }
 app.use(originGuard);
 
-// -------------------- Webhooks BEFORE body parsers --------------------
-// Stripe signature verification (raw body) must happen inside webhookRoutes.
-// Mount before express.json/urlencoded.
+// Webhooks BEFORE body parsers (Stripe raw body signature verification)
 app.use("/webhooks", webhookRoutes);
 
-// -------------------- Body parsers --------------------
+// Body parsers
 app.use(express.urlencoded({ extended: true, limit: "2mb" }));
 app.use(express.json({ limit: "2mb" }));
 
-// -------------------- Docs --------------------
+// API docs route
 app.get("/api/docs", (req, res) => res.render("api/docs"));
 app.get("/api", (req, res) => res.redirect("/api/docs"));
 
-// -------------------- Route-level limits --------------------
+// Route-level limits
 app.use("/admin/login", adminLoginLimiter);
 app.use("/checkout", checkoutLimiter);
 
-// -------------------- Routes --------------------
+// Routes
 app.use("/", publicRoutes);
 app.use("/admin", adminRoutes);
 
-// -------------------- 404 --------------------
-app.use((req, res) => res.status(404).send("Not found."));
+// 404
+app.use((req, res) => {
+  res.status(404).send("Not found.");
+});
 
-// -------------------- Error handler --------------------
+// Error handler
 app.use((err, req, res, next) => {
   console.error(err);
   res.status(500).send("Server error.");
 });
 
-// -------------------- Start --------------------
+// Start
 await connectDb();
+
 const port = Number(process.env.PORT || 10000);
 app.listen(port, () => console.log(`Imprev Clothing running on :${port}`));
