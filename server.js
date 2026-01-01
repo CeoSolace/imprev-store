@@ -24,7 +24,7 @@ app.set("trust proxy", 1);
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
-// Security headers (CSP off because you’re using inline <style>/<script> in EJS)
+// Security headers (CSP off because you're using inline <style>/<script> in EJS)
 app.use(
   helmet({
     contentSecurityPolicy: false,
@@ -45,12 +45,22 @@ app.use(
     limit: 180,
     standardHeaders: true,
     legacyHeaders: false,
-    keyGenerator: (req) => req.ip, // trust proxy makes this correct
+    keyGenerator: (req) => req.ip,
   })
 );
 
 // Static files (favicon.ico, style.css, etc.)
 app.use(express.static(path.join(__dirname, "public")));
+
+// ✅ API docs page (server-side render)
+app.get("/api/docs", (req, res) => {
+  res.render("api/docs");
+});
+
+// Optional nice redirect
+app.get("/api", (req, res) => {
+  res.redirect("/api/docs");
+});
 
 // Webhooks should come BEFORE json/urlencoded if you need raw body for Stripe signatures.
 // If your webhook route uses express.raw(), it MUST mount before express.json().
