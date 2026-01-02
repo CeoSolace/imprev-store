@@ -7,81 +7,6 @@
   <link rel="icon" href="/favicon.ico" />
   <link rel="apple-touch-icon" href="/favicon.ico" />
   <link rel="stylesheet" href="/style.css" />
-  <style>
-    .chatWrap{ max-width: 980px; margin: 0 auto; }
-    .chatCard{
-      margin-top: 14px;
-      border-radius: 20px;
-      border:1px solid rgba(255,255,255,.10);
-      background: rgba(255,255,255,.03);
-      box-shadow: 0 10px 30px rgba(0,0,0,.35);
-      overflow:hidden;
-    }
-    .chatHead{
-      padding: 14px 16px;
-      border-bottom: 1px solid rgba(255,255,255,.08);
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      flex-wrap:wrap;
-    }
-    .chatTitle{ font-weight: 1000; letter-spacing: -.2px; }
-    .chatMeta{ color: rgba(238,241,255,.62); font-size: 12px; font-weight: 900; }
-    .chatLog{
-      padding: 14px 16px;
-      height: 420px;
-      overflow:auto;
-      display:flex;
-      flex-direction:column;
-      gap:10px;
-      background: rgba(0,0,0,.14);
-    }
-    .msg{
-      max-width: 78%;
-      border-radius: 16px;
-      border:1px solid rgba(255,255,255,.10);
-      padding: 10px 12px;
-      background: rgba(0,0,0,.22);
-      color: rgba(238,241,255,.92);
-    }
-    .msg.user{ align-self:flex-start; }
-    .msg.admin{ align-self:flex-end; background: rgba(255,255,255,.06); }
-    .msg.system{ align-self:flex-start; opacity:.9; }
-    .msgTop{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      margin-bottom: 6px;
-      color: rgba(238,241,255,.62);
-      font-size: 11px;
-      font-weight: 900;
-      letter-spacing:.2px;
-      text-transform: uppercase;
-    }
-    .chatSend{
-      padding: 12px 14px;
-      border-top: 1px solid rgba(255,255,255,.08);
-      display:flex;
-      gap:10px;
-      align-items:flex-end;
-      background: rgba(255,255,255,.02);
-    }
-    .chatSend textarea{
-      flex:1;
-      resize:none;
-      min-height: 48px;
-      max-height: 140px;
-    }
-    .smallNote{
-      margin-top: 10px;
-      color: rgba(238,241,255,.55);
-      font-size: 12px;
-      line-height: 1.4;
-      font-weight: 800;
-    }
-  </style>
 </head>
 <body>
   <header class="top">
@@ -97,100 +22,35 @@
     </div>
   </header>
 
-  <main class="wrap chatWrap">
-    <div class="chatCard">
-      <div class="chatHead">
-        <div>
-          <div class="chatTitle">Support Ticket: <%= ticket.publicId %></div>
-          <div class="chatMeta">
-            <%= ticket.subject ? ticket.subject : "Support" %>
-            <% if (ticket.email) { %> • <%= ticket.email %> <% } %>
-            • Status: <%= ticket.status %>
-          </div>
-        </div>
-        <div class="chatMeta">This chat updates live.</div>
+  <main class="wrap">
+    <section class="box" style="max-width: 980px;">
+      <div class="h">Support Ticket: <%= ticket.publicId %></div>
+      <div class="muted">
+        <%= ticket.subject || "No subject" %>
+        <% if (ticket.email) { %> • <%= ticket.email %> <% } %>
+        • Status: <span id="ticketStatus"><%= ticket.status %></span>
+        <span style="float:right; opacity:.7;">This chat updates live.</span>
       </div>
 
-      <div id="log" class="chatLog">
-        <% for (let i=0;i<ticket.messages.length;i++){ const m=ticket.messages[i]; %>
-          <div class="msg <%= m.by %>">
-            <div class="msgTop">
-              <span><%= m.by %></span>
-              <span><%= new Date(m.ts).toLocaleString() %></span>
-            </div>
-            <div><%= m.text %></div>
-          </div>
-        <% } %>
+      <input type="hidden" id="ticketPublicId" value="<%= ticket.publicId %>">
+      <input type="hidden" id="ticketRole" value="user">
+
+      <div id="chatList" class="chatList"></div>
+
+      <div class="chatBar">
+        <textarea id="chatInput" rows="2" placeholder="Type your message…"></textarea>
+        <button class="btn" id="chatSend" type="button">Send</button>
       </div>
 
-      <div class="chatSend">
-        <textarea id="text" placeholder="Type a message…"></textarea>
-        <button id="send" class="btn" type="button">Send</button>
+      <div class="muted" style="margin-top:10px;">
+        Discord issues: ask the staff of the Discord. Website support can’t help with Discord moderation/server problems.
       </div>
-    </div>
-
-    <div class="smallNote">
-      Discord issues: ask the staff of the Discord. Website support can’t help with Discord moderation/server problems.
-    </div>
+    </section>
   </main>
 
   <footer class="foot">© Imprev Clothing</footer>
 
   <script src="/socket.io/socket.io.js"></script>
-  <script>
-    (function(){
-      const publicId = "<%= ticket.publicId %>";
-      const log = document.getElementById("log");
-      const text = document.getElementById("text");
-      const send = document.getElementById("send");
-
-      const socket = io({ path: "/socket.io" });
-
-      function scrollBottom(){ log.scrollTop = log.scrollHeight; }
-      scrollBottom();
-
-      socket.emit("join_ticket", { publicId, role: "user" }, (res) => {
-        if (!res || !res.ok) {
-          console.error(res);
-          alert("Support session auth failed. Reopen ticket from the same browser you created it.");
-        }
-      });
-
-      socket.on("message", (m) => {
-        const el = document.createElement("div");
-        el.className = "msg " + (m.by || "user");
-        el.innerHTML =
-          '<div class="msgTop"><span>' + (m.by||"user") + '</span><span>' +
-          new Date(m.ts).toLocaleString() +
-          '</span></div><div></div>';
-        el.querySelector("div:last-child").textContent = m.text || "";
-        log.appendChild(el);
-        scrollBottom();
-      });
-
-      function doSend(){
-        const v = (text.value || "").trim();
-        if (!v) return;
-        send.disabled = true;
-        socket.emit("send_message", { text: v }, (res) => {
-          send.disabled = false;
-          if (!res || !res.ok) {
-            alert("Failed to send. Try again.");
-            return;
-          }
-          text.value = "";
-          text.focus();
-        });
-      }
-
-      send.addEventListener("click", doSend);
-      text.addEventListener("keydown", (e) => {
-        if (e.key === "Enter" && !e.shiftKey) {
-          e.preventDefault();
-          doSend();
-        }
-      });
-    })();
-  </script>
+  <script src="/support.js"></script>
 </body>
 </html>
