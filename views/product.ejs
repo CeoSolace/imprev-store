@@ -1,10 +1,18 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title><%= product ? product.name : "Product" %> • Imprev Clothing</title>
+
+  <!-- favicon (served from /public/favicon.ico) -->
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link rel="apple-touch-icon" href="/favicon.ico">
+  <meta name="theme-color" content="#0b0d12">
+
   <link rel="stylesheet" href="/style.css" />
+
   <style>
     .crumbs{
       display:flex;
@@ -30,8 +38,8 @@
 
     .pCard{
       border-radius: 20px;
-      border:1px solid rgba(255,255,255,.08);
-      background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.03);
       box-shadow: 0 10px 30px rgba(0,0,0,.35);
       overflow:hidden;
     }
@@ -39,7 +47,7 @@
     /* --- Gallery with thumbnails --- */
     .gallery{
       border-radius: 20px;
-      border:1px solid rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.10);
       background: rgba(0,0,0,.18);
       overflow:hidden;
       box-shadow: 0 10px 30px rgba(0,0,0,.35);
@@ -79,24 +87,23 @@
       width: 84px;
       height: 84px;
       border-radius: 14px;
-      border:1px solid rgba(255,255,255,.10);
+      border:1px solid rgba(255,255,255,.12);
       overflow:hidden;
       background: rgba(255,255,255,.03);
       cursor:pointer;
       position:relative;
       transition: .15s ease;
 
-      /* 🔧 remove ugly button defaults */
       padding: 0;
       outline: none;
     }
     .thumb:hover{
       transform: translateY(-1px);
-      border-color: rgba(124,92,255,.35);
+      border-color: rgba(255,255,255,.20);
     }
     .thumb:focus{
-      border-color: rgba(124,92,255,.70);
-      box-shadow: 0 0 0 4px rgba(124,92,255,.12);
+      border-color: rgba(255,255,255,.28);
+      box-shadow: 0 0 0 4px rgba(255,255,255,.08);
     }
     .thumb img{
       width:100%;
@@ -105,8 +112,8 @@
       display:block;
     }
     .thumb.active{
-      border-color: rgba(124,92,255,.70);
-      box-shadow: 0 0 0 4px rgba(124,92,255,.12);
+      border-color: rgba(255,255,255,.28);
+      box-shadow: 0 0 0 4px rgba(255,255,255,.08);
     }
 
     .galleryHint{
@@ -115,7 +122,7 @@
       bottom: 12px;
       padding: 8px 10px;
       border-radius: 999px;
-      border:1px solid rgba(255,255,255,.10);
+      border:1px solid rgba(255,255,255,.12);
       background: rgba(0,0,0,.35);
       color: rgba(238,241,255,.78);
       font-weight: 900;
@@ -147,25 +154,25 @@
     .chip{
       padding: 7px 10px;
       border-radius: 999px;
-      border: 1px solid rgba(255,255,255,.10);
+      border: 1px solid rgba(255,255,255,.12);
       background: rgba(0,0,0,.18);
-      color: rgba(238,241,255,.80);
+      color: rgba(238,241,255,.82);
       font-weight: 900;
       font-size: 12px;
     }
     .chipHot{
-      border-color: rgba(46,229,157,.22);
-      background: rgba(46,229,157,.12);
-      color: rgba(210,255,238,.95);
+      border-color: rgba(255,255,255,.16);
+      background: rgba(255,255,255,.06);
+      color: rgba(238,241,255,.92);
     }
 
-    /* Discord mini card */
+    /* Discord mini card (monochrome) */
     .discordBox{
       margin-top: 12px;
       padding: 14px;
       border-radius: 16px;
       border: 1px solid rgba(255,255,255,.10);
-      background: linear-gradient(135deg, rgba(124,92,255,.14), rgba(46,229,157,.08));
+      background: rgba(0,0,0,.22);
       display:flex;
       align-items:center;
       justify-content:space-between;
@@ -173,12 +180,12 @@
     }
     .discordLeft{ display:flex; flex-direction:column; gap:6px; }
     .discordTitle{ font-weight: 1000; letter-spacing:-.2px; }
-    .discordDesc{ color: rgba(238,241,255,.72); font-size: 12px; line-height: 1.35; }
+    .discordDesc{ color: rgba(238,241,255,.66); font-size: 12px; line-height: 1.35; }
     .discordBtn{
       padding: 10px 12px;
       border-radius: 14px;
-      border:1px solid rgba(255,255,255,.12);
-      background: rgba(0,0,0,.20);
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
       color: rgba(238,241,255,.92);
       font-weight: 950;
       text-decoration:none;
@@ -187,8 +194,8 @@
     }
     .discordBtn:hover{
       transform: translateY(-1px);
-      border-color: rgba(124,92,255,.35);
-      background: rgba(0,0,0,.28);
+      border-color: rgba(255,255,255,.22);
+      background: rgba(255,255,255,.08);
     }
 
     .formBox{
@@ -211,8 +218,8 @@
       outline:none;
     }
     .formBox input:focus, .formBox select:focus{
-      border-color: rgba(124,92,255,.55);
-      box-shadow: 0 0 0 4px rgba(124,92,255,.15);
+      border-color: rgba(255,255,255,.22);
+      box-shadow: 0 0 0 4px rgba(255,255,255,.08);
     }
 
     .row2{
@@ -228,21 +235,25 @@
       width:100%;
       padding: 12px 14px;
       border-radius: 14px;
-      border:1px solid rgba(255,255,255,.10);
-      background: linear-gradient(135deg, rgba(124,92,255,.95), rgba(124,92,255,.55));
-      color:#0b0d12;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.10);
+      color: rgba(238,241,255,.95);
       font-weight: 1000;
       letter-spacing:.2px;
       cursor:pointer;
       transition:.15s ease;
     }
-    .btn2:hover{ transform: translateY(-1px); filter: brightness(1.05); }
+    .btn2:hover{
+      transform: translateY(-1px);
+      background: rgba(255,255,255,.12);
+      border-color: rgba(255,255,255,.20);
+    }
 
     .notice2{
       margin-top: 12px;
       padding: 12px;
       border-radius: 16px;
-      border:1px solid rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.10);
       background: rgba(0,0,0,.18);
       color: rgba(238,241,255,.70);
       line-height: 1.45;
@@ -253,9 +264,9 @@
       margin-top: 12px;
       padding: 12px;
       border-radius: 16px;
-      border:1px solid rgba(255,90,90,.18);
-      background: rgba(255,90,90,.08);
-      color: rgba(255,220,220,.92);
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.22);
+      color: rgba(238,241,255,.88);
       font-weight: 900;
       line-height: 1.45;
     }
