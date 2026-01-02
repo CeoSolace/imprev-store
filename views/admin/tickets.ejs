@@ -1,76 +1,185 @@
 <!doctype html>
 <html>
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Tickets • Admin</title>
-  <link rel="icon" href="/favicon.ico" />
-  <link rel="stylesheet" href="/style.css" />
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Tickets • Imprev Admin</title>
+  <link rel="stylesheet" href="/admin.css" />
+  <style>
+    .topRow{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-end;
+      gap:12px;
+      flex-wrap:wrap;
+      margin: 10px 0 14px;
+    }
+    .tabs{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+    .tab{
+      padding: 10px 12px;
+      border-radius: 12px;
+      border:1px solid rgba(0,0,0,.10);
+      background: rgba(0,0,0,.03);
+      text-decoration:none;
+      color: inherit;
+      font-weight: 900;
+      opacity:.85;
+    }
+    .tab.active{
+      background: rgba(0,0,0,.08);
+      opacity: 1;
+    }
+    .searchRow{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+    .searchRow input{
+      padding: 10px 12px;
+      border-radius: 12px;
+      border:1px solid rgba(0,0,0,.12);
+      min-width: 260px;
+    }
+    .tableWrap{
+      border:1px solid rgba(0,0,0,.10);
+      border-radius: 14px;
+      overflow:hidden;
+      background: #fff;
+    }
+    table{ width:100%; border-collapse:collapse; }
+    th, td{ padding: 12px; text-align:left; vertical-align:top; }
+    thead tr{ background: rgba(0,0,0,.04); }
+    tbody tr{ border-top: 1px solid rgba(0,0,0,.08); }
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border:1px solid rgba(0,0,0,.10);
+      background: rgba(0,0,0,.03);
+      font-weight: 900;
+      font-size: 12px;
+      opacity:.9;
+      white-space:nowrap;
+    }
+    .pill.open{ background: rgba(0,0,0,.06); }
+    .pill.closed{ opacity:.7; }
+    .code{ font-weight: 1000; letter-spacing:.5px; }
+    .subj{ font-weight: 900; }
+    .preview{
+      margin-top: 6px;
+      opacity:.75;
+      font-size: 12px;
+      line-height: 1.35;
+      max-width: 70ch;
+    }
+    .right{
+      white-space:nowrap;
+    }
+    .muter{ opacity:.75; font-size:12px; }
+    .btnLink{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border:1px solid rgba(0,0,0,.10);
+      background: rgba(0,0,0,.03);
+      text-decoration:none;
+      color: inherit;
+      font-weight: 900;
+    }
+    .btnLink:hover{ background: rgba(0,0,0,.06); }
+  </style>
 </head>
-<body>
-  <header class="top">
-    <div class="topInner">
-      <a class="brand" href="/admin"><span class="brandMark"></span><span>Admin</span></a>
-      <nav class="nav">
-        <a href="/admin">Dashboard</a>
-        <a href="/admin/products">Products</a>
-        <a href="/admin/orders">Orders</a>
-        <a href="/admin/tickets">Tickets</a>
-        <form action="/admin/logout" method="POST" style="display:inline;">
-          <button class="btn" type="submit" style="width:auto;margin:0;padding:10px 12px;border-radius:999px;">Logout</button>
-        </form>
-      </nav>
+<body class="a">
+  <div class="bar">
+    <div class="logo">Imprev Admin</div>
+    <div style="display:flex; gap:10px; align-items:center;">
+      <a href="/admin" style="color:inherit; text-decoration:none; opacity:.85;">Dashboard</a>
+      <form method="POST" action="/admin/logout"><button>Logout</button></form>
     </div>
-  </header>
+  </div>
 
-  <main class="wrap">
-    <div class="box">
-      <div class="h">Support Tickets</div>
-      <p class="muted">Open/close/delete tickets. Replies are stored in the database.</p>
+  <div class="wrapA">
+    <h1>Tickets</h1>
+    <p class="muted">Open = active. Closed = archived. Users can reopen by replying.</p>
 
-      <form method="GET" action="/admin/tickets" class="row2">
-        <div>
-          <label>Status</label>
-          <select name="status">
-            <option value="open" <%= status==="open" ? "selected" : "" %>>Open</option>
-            <option value="closed" <%= status==="closed" ? "selected" : "" %>>Closed</option>
-            <option value="all" <%= status==="all" ? "selected" : "" %>>All</option>
-          </select>
-        </div>
-        <div>
-          <label>Search</label>
-          <input name="q" value="<%= q || "" %>" placeholder="publicId, email, subject" />
-        </div>
-        <div style="grid-column: 1 / -1;">
-          <button class="btn" type="submit">Filter</button>
-        </div>
+    <div class="topRow">
+      <div class="tabs">
+        <a class="tab <%= status !== 'closed' ? 'active' : '' %>" href="/admin/tickets?status=open<%= q ? ('&q=' + encodeURIComponent(q)) : '' %>">Open</a>
+        <a class="tab <%= status === 'closed' ? 'active' : '' %>" href="/admin/tickets?status=closed<%= q ? ('&q=' + encodeURIComponent(q)) : '' %>">Closed</a>
+      </div>
+
+      <form class="searchRow" method="GET" action="/admin/tickets">
+        <input type="hidden" name="status" value="<%= status %>">
+        <input name="q" value="<%= q %>" placeholder="Search code, email, subject…">
+        <button class="btnA" type="submit">Search</button>
+        <% if (q) { %>
+          <a class="btnLink" href="/admin/tickets?status=<%= status %>">Clear</a>
+        <% } %>
       </form>
     </div>
 
-    <div class="grid" style="grid-template-columns: 1fr; margin-top: 14px;">
-      <% if (tickets && tickets.length) { %>
-        <% for (const t of tickets) { %>
-          <a class="card" href="/admin/tickets/<%= t._id %>">
-            <div class="cardBody">
-              <div class="h"><%= t.publicId %> • <%= (t.subject || "No subject") %></div>
-              <div class="d" style="-webkit-line-clamp: 3;">
-                <%= (t.email ? ("From: " + t.email + " • ") : "") %>
-                <%= "Status: " + t.status + (t.category ? (" • " + t.category) : "") %>
-              </div>
-              <div class="muted">
-                Created: <%= new Date(t.createdAt).toLocaleString() %>
-              </div>
-            </div>
-          </a>
-        <% } %>
-      <% } else { %>
-        <div class="box">
-          <div class="muted">No tickets found.</div>
-        </div>
-      <% } %>
-    </div>
-  </main>
+    <div class="tableWrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Ticket</th>
+            <th>User</th>
+            <th>Status</th>
+            <th class="right">Updated</th>
+            <th class="right">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (!tickets || !tickets.length) { %>
+            <tr>
+              <td colspan="5" class="muter">No tickets.</td>
+            </tr>
+          <% } %>
 
-  <footer class="foot">© Imprev Clothing</footer>
+          <% for (const t of tickets) { %>
+            <tr>
+              <td>
+                <div class="code"><%= t.publicId %></div>
+                <div class="subj"><%= (t.subject || "Support Ticket") %></div>
+                <div class="preview">
+                  <% 
+                    const msgs = (t.messages || []);
+                    const last = msgs.length ? msgs[msgs.length - 1] : null;
+                    const lastText = last ? String(last.text || "") : "";
+                  %>
+                  <%= lastText.slice(0, 140) %><%= lastText.length > 140 ? "…" : "" %>
+                </div>
+              </td>
+              <td>
+                <div><%= (t.email || "—") %></div>
+                <div class="muter"><%= (t.context && t.context.activeCount != null) ? ("Active products: " + t.context.activeCount) : "" %></div>
+              </td>
+              <td>
+                <span class="pill <%= (t.status === 'closed' ? 'closed' : 'open') %>">
+                  <%= (t.status || "open") %>
+                </span>
+              </td>
+              <td class="right">
+                <span class="muter"><%= t.updatedAt ? new Date(t.updatedAt).toLocaleString() : "" %></span>
+              </td>
+              <td class="right">
+                <a class="btnLink" href="/admin/tickets/<%= t.publicId %>">Open</a>
+              </td>
+            </tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
 </body>
 </html>
