@@ -7,14 +7,12 @@ import { Product } from "../models/Product.js";
 import { Order } from "../models/Order.js";
 import { Code } from "../models/Code.js";
 import { Settings } from "../models/Settings.js";
-import { Ticket } from "../models/Ticket.js";
 
 import { signJwt } from "../middleware/jwt.js";
 import { adminOnly } from "../middleware/adminOnly.js";
 import { uploadImageBuffer } from "../config/cloudinary.js";
 
 const r = Router();
-
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 6 * 1024 * 1024 },
@@ -31,7 +29,6 @@ r.post("/login", async (req, res) => {
   if (!ok) return res.render("admin/login", { err: "Bad login" });
 
   const token = signJwt({ email, ts: Date.now() });
-
   res.cookie("admin_token", token, {
     httpOnly: true,
     sameSite: "lax",
@@ -50,14 +47,9 @@ r.get("/", adminOnly, async (req, res) => {
   const products = await Product.countDocuments();
   const orders = await Order.countDocuments();
   const failed = await Order.countDocuments({ status: "failed" });
-  const ticketsOpen = await Ticket.countDocuments({ status: "open" });
-
-  res.render("admin/dashboard", { products, orders, failed, ticketsOpen });
+  res.render("admin/dashboard", { products, orders, failed });
 });
 
-// -------------------------
-// Products
-// -------------------------
 r.get("/products", adminOnly, async (req, res) => {
   const products = await Product.find().sort({ createdAt: -1 }).lean();
   res.render("admin/products", { products });
@@ -123,9 +115,11 @@ r.post("/products/:id/remove-image", adminOnly, async (req, res) => {
   res.redirect(`/admin/products/${p._id}`);
 });
 
-// -------------------------
-// Variants (multi upsert)
-// -------------------------
+/**
+ * ✅ MULTI-VARIANT UPSERT (ONE SUBMIT)
+ * Required by schema: shipping/profit must include UK/EU/US/TR/ROW.
+ * You can still focus on GBP + USD, but we include the other keys too (default 0).
+ */
 r.post("/products/:id/variant", adminOnly, async (req, res) => {
   const p = await Product.findById(req.params.id);
   if (!p) return res.redirect("/admin/products");
@@ -136,6 +130,7 @@ r.post("/products/:id/variant", adminOnly, async (req, res) => {
   const vnameArr = toArr(req.body.vname);
   const sizesArr = toArr(req.body.sizes);
   const printfulVariantIdArr = toArr(req.body.printfulVariantId);
+
   const manufacturingArr = toArr(req.body.manufacturing);
 
   const shipUKArr = toArr(req.body.shipUK);
@@ -184,23 +179,26 @@ r.post("/products/:id/variant", adminOnly, async (req, res) => {
     const profitTR = Number(profitTRArr[i] ?? 0);
     const profitROW = Number(profitROWArr[i] ?? 0);
 
+    // skip blank rows
     const emptyRow = !sku && !name && !printfulVariantId;
     if (emptyRow) continue;
 
     if (!sku) { errors.push(`Row ${i + 1}: SKU required`); continue; }
-    if (seenSkus.has(sku)) { errors.push(`Row ${i + 1}: Duplicate SKU "${sku}"`); continue; }
+    if (seenSkus.has(sku)) { errors.push(`Row ${i + 1}: Duplicate SKU "${sku}" in this submit`); continue; }
     seenSkus.add(sku);
 
     if (!name) { errors.push(`Row ${i + 1}: Variant name required`); continue; }
-    if (!sizes.length) { errors.push(`Row ${i + 1}: Sizes required`); continue; }
+    if (!sizes.length) { errors.push(`Row ${i + 1}: Sizes required (comma separated)`); continue; }
     if (!printfulVariantId) { errors.push(`Row ${i + 1}: Printful Variant ID required`); continue; }
 
     if (manufacturing < 0) { errors.push(`Row ${i + 1}: Manufacturing must be >= 0`); continue; }
     if (shipUK < 0 || shipEU < 0 || shipUS < 0 || shipTR < 0 || shipROW < 0) {
-      errors.push(`Row ${i + 1}: Shipping must be >= 0`); continue;
+      errors.push(`Row ${i + 1}: Shipping must be >= 0`);
+      continue;
     }
     if (profitUK < 0 || profitEU < 0 || profitUS < 0 || profitTR < 0 || profitROW < 0) {
-      errors.push(`Row ${i + 1}: Profit cannot be negative`); continue;
+      errors.push(`Row ${i + 1}: Profit cannot be negative`);
+      continue;
     }
 
     const variant = {
@@ -235,9 +233,6 @@ r.post("/products/:id/variant-delete", adminOnly, async (req, res) => {
   res.redirect(`/admin/products/${p._id}`);
 });
 
-// -------------------------
-// Codes
-// -------------------------
 r.get("/codes", adminOnly, async (req, res) => {
   const codes = await Code.find().sort({ createdAt: -1 }).lean();
   res.render("admin/codes", { codes });
@@ -271,17 +266,11 @@ r.post("/codes/:id/delete", adminOnly, async (req, res) => {
   res.redirect("/admin/codes");
 });
 
-// -------------------------
-// Orders
-// -------------------------
 r.get("/orders", adminOnly, async (req, res) => {
   const orders = await Order.find().sort({ createdAt: -1 }).limit(250).lean();
   res.render("admin/orders", { orders });
 });
 
-// -------------------------
-// Settings
-// -------------------------
 r.get("/settings", adminOnly, async (req, res) => {
   const settings = await Settings.findOne().lean();
   res.render("admin/settings", { settings });
@@ -314,58 +303,6 @@ r.post("/settings", adminOnly, async (req, res) => {
 
   await s.save();
   res.redirect("/admin/settings");
-});
-
-// -------------------------
-// Tickets (Admin) - SOCKET VERSION
-// -------------------------
-r.get("/tickets", adminOnly, async (req, res) => {
-  const tab = String(req.query.tab || "open").trim() === "closed" ? "closed" : "open";
-  const q = String(req.query.q || "").trim();
-
-  const filter = { status: tab };
-
-  if (q) {
-    const safe = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const rx = new RegExp(safe, "i");
-    filter.$or = [{ publicId: rx }, { email: rx }, { subject: rx }, { "messages.text": rx }];
-  }
-
-  const ticketsRaw = await Ticket.find(filter).sort({ updatedAt: -1 }).limit(300).lean();
-
-  const tickets = ticketsRaw.map((t) => ({
-    publicId: t.publicId,
-    email: t.email,
-    subject: t.subject,
-    status: t.status,
-    updatedAt: t.updatedAt,
-    lastText: (t.messages && t.messages.length) ? t.messages[t.messages.length - 1].text : "",
-  }));
-
-  res.render("admin/tickets", { tickets, tab, q });
-});
-
-r.get("/tickets/:publicId", adminOnly, async (req, res) => {
-  const publicId = String(req.params.publicId || "").trim();
-  const ticket = await Ticket.findOne({ publicId }).lean();
-  if (!ticket) return res.redirect("/admin/tickets");
-  res.render("admin/ticket_thread", { ticket });
-});
-
-r.post("/tickets/:publicId/toggle", adminOnly, async (req, res) => {
-  const publicId = String(req.params.publicId || "").trim();
-  const t = await Ticket.findOne({ publicId });
-  if (!t) return res.redirect("/admin/tickets");
-  t.status = t.status === "closed" ? "open" : "closed";
-  t.updatedAt = new Date();
-  await t.save();
-  res.redirect(`/admin/tickets/${encodeURIComponent(publicId)}`);
-});
-
-r.post("/tickets/:publicId/delete", adminOnly, async (req, res) => {
-  const publicId = String(req.params.publicId || "").trim();
-  await Ticket.deleteOne({ publicId });
-  res.redirect("/admin/tickets");
 });
 
 export default r;
