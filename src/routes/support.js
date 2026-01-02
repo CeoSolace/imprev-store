@@ -1,78 +1,118 @@
 import { Router } from "express";
 import crypto from "crypto";
 import { Ticket } from "../models/Ticket.js";
-import { signJwt } from "../middleware/jwt.js";
 
 const r = Router();
-
-function makeId() {
-  // 8 digits-ish, readable
-  return String(Math.floor(10000000 + Math.random() * 90000000));
-}
 
 function autoReply(message) {
   const m = String(message || "").toLowerCase();
 
   if (m.includes("discord")) {
-    return "Discord issues: ask the staff of the Discord. Website support can’t help with Discord moderation/server problems.";
+    return "Ask the Discord staff. Website support can’t help with Discord moderation or server issues.";
   }
-  if (m.includes("disabled") || m.includes("product") && m.includes("gone")) {
-    return "If a product is disabled: it was either a temporary drop, an admin error, or it’s being updated. If it returns, it’ll reappear on the store automatically.";
+  if (m.includes("disabled") || m.includes("product") || m.includes("removed")) {
+    return "If a product is disabled: it was a temporary drop, a listing error, or it’s being updated. Temporary drops may return later.";
   }
   if (m.includes("refund") || m.includes("return")) {
-    return "Refunds are only considered for confirmed defects or damage. Include clear photos and your order email so staff can review.";
+    return "Refunds are only considered for confirmed defects or damage. If damaged, send clear photos and your receipt email.";
   }
-  return "Ticket received. Staff will reply here when available.";
+
+  return "Ticket received. Staff will respond here when available.";
 }
 
-r.get("/", (req, res) => {
+function makeAccessKey() {
+  return crypto.randomBytes(18).toString("base64url"); // short but strong enough
+}
+
+function hashKey(key) {
+  return crypto.createHash("sha256").update(String(key || "")).digest("hex");
+}
+
+function cookieName(publicId) {
+  // cookie unique per ticket
+  return `st_${String(publicId).replace(/[^A-Za-z0-9_-]/g, "")}`;
+}
+
+function setTicketCookie(res, publicId, key) {
+  res.cookie(cookieName(publicId), key, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    maxAge: 1000 * 60 * 60 * 24 * 30, // 30 days
+    path: `/support/${encodeURIComponent(publicId)}`, // ✅ scoped to this ticket path
+  });
+}
+
+async function validateTicketAccess(req, ticket) {
+  const publicId = ticket.publicId;
+
+  // 1) query key (first-time access / shareable link)
+  const qk = String(req.query.k || "").trim();
+  if (qk && ticket.accessKeyHash && hashKey(qk) === ticket.accessKeyHash) return qk;
+
+  // 2) cookie key (normal return visits)
+  const ck = String(req.cookies?.[cookieName(publicId)] || "").trim();
+  if (ck && ticket.accessKeyHash && hashKey(ck) === ticket.accessKeyHash) return ck;
+
+  return null;
+}
+
+r.get("/support", (req, res) => {
   res.render("support", { error: "", created: null });
 });
 
-r.post("/", async (req, res) => {
-  try {
-    const email = String(req.body.email || "").trim().slice(0, 180);
-    const subject = String(req.body.subject || "").trim().slice(0, 140);
-    const message = String(req.body.message || "").trim().slice(0, 2000);
-    if (!message) return res.render("support", { error: "Message required.", created: null });
+r.post("/support", async (req, res) => {
+  const email = String(req.body.email || "").trim().slice(0, 200);
+  const subject = String(req.body.subject || "").trim().slice(0, 120);
+  const message = String(req.body.message || "").trim().slice(0, 4000);
 
-    const publicId = makeId();
-    const systemReply = autoReply(message);
+  if (!message) return res.render("support", { error: "Message required.", created: null });
 
-    const t = await Ticket.create({
-      publicId,
-      email,
-      subject,
-      status: "open",
-      messages: [
-        { by: "user", text: message, ts: new Date() },
-        { by: "system", text: systemReply, ts: new Date() },
-      ],
-      updatedAt: new Date(),
-    });
+  const systemReply = autoReply(message);
 
-    // cookie binds this browser to this ticket
-    const ticketToken = signJwt({ ticket: publicId, ts: Date.now() });
-    res.cookie("ticket_token", ticketToken, {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      maxAge: 1000 * 60 * 60 * 24 * 30, // 30 days
-    });
+  const accessKey = makeAccessKey();
+  const accessKeyHash = hashKey(accessKey);
 
-    return res.redirect(`/support/${publicId}`);
-  } catch (e) {
-    console.error(e);
-    return res.render("support", { error: "Failed to create ticket.", created: null });
-  }
+  const ticket = await Ticket.create({
+    email,
+    subject,
+    accessKeyHash,
+    pageUrl: String(req.headers.referer || "").slice(0, 500),
+    userAgent: String(req.headers["user-agent"] || "").slice(0, 300),
+    ip: String(req.ip || ""),
+    status: "open",
+    messages: [
+      { from: "user", text: message },
+      { from: "system", text: systemReply },
+    ],
+  });
+
+  // ✅ set cookie so the creator stays logged into that ticket
+  setTicketCookie(res, ticket.publicId, accessKey);
+
+  // ✅ shareable / reopen link (works even in a different browser/device)
+  const link = `/support/${encodeURIComponent(ticket.publicId)}?k=${encodeURIComponent(accessKey)}`;
+
+  res.render("support", {
+    error: "",
+    created: { publicId: ticket.publicId, systemReply, link },
+  });
 });
 
-r.get("/:publicId", async (req, res) => {
+r.get("/support/:publicId", async (req, res) => {
   const publicId = String(req.params.publicId || "").trim();
   const ticket = await Ticket.findOne({ publicId }).lean();
   if (!ticket) return res.status(404).send("Not found");
 
-  // NOTE: token check happens on socket join; page can render safely without leaking anything sensitive
+  const okKey = await validateTicketAccess(req, ticket);
+  if (!okKey) {
+    // ✅ no annoying alert, just a clean message
+    return res.status(403).send("Support access denied. Use the original ticket link (with ?k=...) to reopen.");
+  }
+
+  // ✅ refresh cookie (keeps it alive)
+  setTicketCookie(res, ticket.publicId, okKey);
+
   res.render("support_thread", { ticket });
 });
 
