@@ -17,39 +17,61 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
-// Render / reverse proxies (Render, Cloudflare, etc.)
-app.set("trust proxy", 1);
+/* =========================
+   Proxy + app basics
+========================= */
+app.set("trust proxy", 1); // Render/Cloudflare etc.
 app.disable("x-powered-by");
 
-// Views
+/* =========================
+   Views
+========================= */
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
-// Logging
+/* =========================
+   Logging
+========================= */
 app.use(morgan(process.env.NODE_ENV === "production" ? "tiny" : "dev"));
 
-// Timeouts (basic slowloris resistance)
+/* =========================
+   Timeouts (basic slowloris resistance)
+========================= */
 app.use((req, res, next) => {
   req.setTimeout(15_000);
   res.setTimeout(15_000);
   next();
 });
 
-// Force HTTPS in production (via proxy header)
+/* =========================
+   Force HTTPS (prod only)
+========================= */
 function enforceHttps(req, res, next) {
   if (process.env.NODE_ENV !== "production") return next();
-  const proto = String(req.headers["x-forwarded-proto"] || "").split(",")[0].trim();
+
+  const proto = String(req.headers["x-forwarded-proto"] || "")
+    .split(",")[0]
+    .trim()
+    .toLowerCase();
+
   if (proto && proto !== "https") {
-    const host = req.headers.host;
+    const host =
+      String(req.headers["x-forwarded-host"] || req.headers.host || "")
+        .split(",")[0]
+        .trim();
+
     return res.redirect(301, `https://${host}${req.originalUrl}`);
   }
+
   next();
 }
 app.use(enforceHttps);
 
-// Security headers
-// CSP allows inline because your EJS uses inline <style>/<script>.
-// COEP is OFF because it breaks Cloudinary images. CORP is cross-origin to allow them.
+/* =========================
+   Security headers
+   - CSP allows inline because your EJS uses inline <style>/<script>
+   - COEP off because it breaks external images (cloudinary/etc)
+========================= */
 app.use(
   helmet({
     contentSecurityPolicy: {
@@ -60,21 +82,20 @@ app.use(
         frameAncestors: ["'none'"],
         formAction: ["'self'"],
         objectSrc: ["'none'"],
-        imgSrc: ["'self'", "data:", "https:"], // allow Cloudinary + https images
+        imgSrc: ["'self'", "data:", "https:"],
         connectSrc: ["'self'", "https:"],
         fontSrc: ["'self'", "data:", "https:"],
         styleSrc: ["'self'", "'unsafe-inline'", "https:"],
         scriptSrc: ["'self'", "'unsafe-inline'", "https:"],
       },
     },
-    crossOriginEmbedderPolicy: false, // ✅ DO NOT break external images
+    crossOriginEmbedderPolicy: false,
     crossOriginOpenerPolicy: { policy: "same-origin" },
-    crossOriginResourcePolicy: { policy: "cross-origin" }, // ✅ allow external resources
+    crossOriginResourcePolicy: { policy: "cross-origin" },
     referrerPolicy: { policy: "strict-origin-when-cross-origin" },
   })
 );
 
-// HSTS (only in production)
 if (process.env.NODE_ENV === "production") {
   app.use(
     helmet.hsts({
@@ -85,10 +106,14 @@ if (process.env.NODE_ENV === "production") {
   );
 }
 
-// Cookies
+/* =========================
+   Cookies
+========================= */
 app.use(cookieParser());
 
-// Rate limits (global + burst + route-specific)
+/* =========================
+   Rate limiting
+========================= */
 const globalLimiter = rateLimit({
   windowMs: 60_000,
   limit: 120,
@@ -124,64 +149,134 @@ const checkoutLimiter = rateLimit({
 app.use(globalLimiter);
 app.use(burstLimiter);
 
-// Cheap garbage filter
+/* =========================
+   Basic junk filter
+========================= */
 app.use((req, res, next) => {
   if ((req.originalUrl || "").length > 2000) return res.status(414).send("URI too long.");
   next();
 });
 
-// Static files (favicon.ico, style.css, etc.)
-app.use(express.static(path.join(__dirname, "public"), { maxAge: "1h", etag: true }));
+/* =========================
+   Static files
+   - Put favicon.ico in /public/favicon.ico
+========================= */
+app.use(
+  express.static(path.join(__dirname, "public"), {
+    maxAge: "1h",
+    etag: true,
+  })
+);
 
-// Origin/Referer guard (blocks cross-site POSTs). Webhooks exempt.
+/* =========================
+   Origin/Referer guard (FIXED)
+   - Your old version broke when host/proxy headers didn’t match exactly.
+   - This one parses URLs properly and accepts forwarded hosts + BASE_URL host.
+========================= */
+function safeHostFromReq(req) {
+  return String(req.headers["x-forwarded-host"] || req.headers.host || "")
+    .split(",")[0]
+    .trim()
+    .toLowerCase();
+}
+
+function safeHostFromEnv() {
+  const base = String(process.env.BASE_URL || "").trim();
+  if (!base) return null;
+  try {
+    return new URL(base).host.toLowerCase(); // host includes port if present
+  } catch {
+    return null;
+  }
+}
+
+function hostFromHeaderUrl(h) {
+  const s = String(h || "").trim();
+  if (!s) return null;
+  try {
+    return new URL(s).host.toLowerCase();
+  } catch {
+    // Sometimes referer/origin is garbage. Treat as invalid.
+    return "__invalid__";
+  }
+}
+
 function originGuard(req, res, next) {
   const m = req.method.toUpperCase();
   if (m === "GET" || m === "HEAD" || m === "OPTIONS") return next();
+
+  // Webhooks must not be blocked
   if (req.originalUrl.startsWith("/webhooks")) return next();
 
-  const host = String(req.headers.host || "");
-  const origin = String(req.headers.origin || "");
-  const referer = String(req.headers.referer || "");
+  const reqHost = safeHostFromReq(req);          // actual host we’re serving
+  const envHost = safeHostFromEnv();             // BASE_URL host
+  const allowedHosts = new Set([reqHost]);
+  if (envHost) allowedHosts.add(envHost);
 
-  const originOk = !origin || origin.includes(`://${host}`);
-  const refererOk = !referer || referer.includes(`://${host}`);
+  const originHost = hostFromHeaderUrl(req.headers.origin);
+  const refererHost = hostFromHeaderUrl(req.headers.referer);
 
-  if (!originOk || !refererOk) return res.status(403).send("Blocked.");
+  // If header is missing, allow (some clients/proxies omit)
+  // If header exists but is invalid or not allowed, block.
+  if (originHost && originHost !== "__invalid__" && !allowedHosts.has(originHost)) {
+    return res.status(403).send("Blocked.");
+  }
+  if (refererHost && refererHost !== "__invalid__" && !allowedHosts.has(refererHost)) {
+    return res.status(403).send("Blocked.");
+  }
+  if (originHost === "__invalid__" || refererHost === "__invalid__") {
+    return res.status(403).send("Blocked.");
+  }
+
   next();
 }
 app.use(originGuard);
 
-// Webhooks BEFORE body parsers (Stripe raw body signature verification)
+/* =========================
+   Webhooks BEFORE body parsers
+   (Stripe signature verification needs raw body in webhookRoutes)
+========================= */
 app.use("/webhooks", webhookRoutes);
 
-// Body parsers
+/* =========================
+   Body parsers (normal routes)
+========================= */
 app.use(express.urlencoded({ extended: true, limit: "2mb" }));
 app.use(express.json({ limit: "2mb" }));
 
-// API docs route
+/* =========================
+   API docs
+========================= */
 app.get("/api/docs", (req, res) => res.render("api/docs"));
 app.get("/api", (req, res) => res.redirect("/api/docs"));
 
-// Route-level limits
+/* =========================
+   Route-level limits
+========================= */
 app.use("/admin/login", adminLoginLimiter);
 app.use("/checkout", checkoutLimiter);
 
-// Routes
+/* =========================
+   App routes
+========================= */
 app.use("/", publicRoutes);
 app.use("/admin", adminRoutes);
 
-// 404
+/* =========================
+   404 + error handler
+========================= */
 app.use((req, res) => {
   res.status(404).send("Not found.");
 });
 
-// Error handler
 app.use((err, req, res, next) => {
   console.error(err);
   res.status(500).send("Server error.");
 });
 
-// Start
+/* =========================
+   Start
+========================= */
 await connectDb();
 
 const port = Number(process.env.PORT || 10000);
