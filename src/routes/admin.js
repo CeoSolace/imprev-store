@@ -7,6 +7,7 @@ import { Product } from "../models/Product.js";
 import { Order } from "../models/Order.js";
 import { Code } from "../models/Code.js";
 import { Settings } from "../models/Settings.js";
+import { Ticket } from "../models/Ticket.js";
 
 import { signJwt } from "../middleware/jwt.js";
 import { adminOnly } from "../middleware/adminOnly.js";
@@ -47,9 +48,14 @@ r.get("/", adminOnly, async (req, res) => {
   const products = await Product.countDocuments();
   const orders = await Order.countDocuments();
   const failed = await Order.countDocuments({ status: "failed" });
-  res.render("admin/dashboard", { products, orders, failed });
+  const openTickets = await Ticket.countDocuments({ status: "open" });
+
+  res.render("admin/dashboard", { products, orders, failed, openTickets });
 });
 
+/* ---------------------------
+   PRODUCTS
+---------------------------- */
 r.get("/products", adminOnly, async (req, res) => {
   const products = await Product.find().sort({ createdAt: -1 }).lean();
   res.render("admin/products", { products });
@@ -118,7 +124,6 @@ r.post("/products/:id/remove-image", adminOnly, async (req, res) => {
 /**
  * ✅ MULTI-VARIANT UPSERT (ONE SUBMIT)
  * Required by schema: shipping/profit must include UK/EU/US/TR/ROW.
- * You can still focus on GBP + USD, but we include the other keys too (default 0).
  */
 r.post("/products/:id/variant", adminOnly, async (req, res) => {
   const p = await Product.findById(req.params.id);
@@ -179,7 +184,6 @@ r.post("/products/:id/variant", adminOnly, async (req, res) => {
     const profitTR = Number(profitTRArr[i] ?? 0);
     const profitROW = Number(profitROWArr[i] ?? 0);
 
-    // skip blank rows
     const emptyRow = !sku && !name && !printfulVariantId;
     if (emptyRow) continue;
 
@@ -233,6 +237,9 @@ r.post("/products/:id/variant-delete", adminOnly, async (req, res) => {
   res.redirect(`/admin/products/${p._id}`);
 });
 
+/* ---------------------------
+   CODES
+---------------------------- */
 r.get("/codes", adminOnly, async (req, res) => {
   const codes = await Code.find().sort({ createdAt: -1 }).lean();
   res.render("admin/codes", { codes });
@@ -266,11 +273,17 @@ r.post("/codes/:id/delete", adminOnly, async (req, res) => {
   res.redirect("/admin/codes");
 });
 
+/* ---------------------------
+   ORDERS
+---------------------------- */
 r.get("/orders", adminOnly, async (req, res) => {
   const orders = await Order.find().sort({ createdAt: -1 }).limit(250).lean();
   res.render("admin/orders", { orders });
 });
 
+/* ---------------------------
+   SETTINGS
+---------------------------- */
 r.get("/settings", adminOnly, async (req, res) => {
   const settings = await Settings.findOne().lean();
   res.render("admin/settings", { settings });
@@ -303,6 +316,76 @@ r.post("/settings", adminOnly, async (req, res) => {
 
   await s.save();
   res.redirect("/admin/settings");
+});
+
+/* ---------------------------
+   SUPPORT / TICKETS (NEW)
+---------------------------- */
+
+// List tickets
+r.get("/tickets", adminOnly, async (req, res) => {
+  const status = String(req.query.status || "open");
+  const q = String(req.query.q || "").trim();
+
+  const filter = {};
+  if (status === "open" || status === "closed") filter.status = status;
+
+  if (q) {
+    filter.$or = [
+      { publicId: new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i") },
+      { email: new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i") },
+      { subject: new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i") },
+    ];
+  }
+
+  const tickets = await Ticket.find(filter).sort({ createdAt: -1 }).limit(300).lean();
+  res.render("admin/tickets", { tickets, status, q });
+});
+
+// View ticket
+r.get("/tickets/:id", adminOnly, async (req, res) => {
+  const ticket = await Ticket.findById(req.params.id).lean();
+  if (!ticket) return res.redirect("/admin/tickets");
+  res.render("admin/ticket_view", { ticket, err: "" });
+});
+
+// Admin reply (adds message, keeps open unless explicitly closing)
+r.post("/tickets/:id/reply", adminOnly, async (req, res) => {
+  const ticket = await Ticket.findById(req.params.id);
+  if (!ticket) return res.redirect("/admin/tickets");
+
+  const text = String(req.body.text || "").trim().slice(0, 4000);
+  const close = String(req.body.close || "") === "1";
+
+  if (!text && !close) {
+    const lean = await Ticket.findById(req.params.id).lean();
+    return res.status(400).render("admin/ticket_view", { ticket: lean, err: "Reply text required." });
+  }
+
+  if (text) {
+    ticket.messages.push({ from: "admin", text });
+    ticket.lastAdminAt = new Date();
+  }
+
+  if (close) ticket.status = "closed";
+
+  await ticket.save();
+  res.redirect(`/admin/tickets/${ticket._id}`);
+});
+
+// Re-open ticket
+r.post("/tickets/:id/reopen", adminOnly, async (req, res) => {
+  const ticket = await Ticket.findById(req.params.id);
+  if (!ticket) return res.redirect("/admin/tickets");
+  ticket.status = "open";
+  await ticket.save();
+  res.redirect(`/admin/tickets/${ticket._id}`);
+});
+
+// Delete ticket (hard delete)
+r.post("/tickets/:id/delete", adminOnly, async (req, res) => {
+  await Ticket.deleteOne({ _id: req.params.id });
+  res.redirect("/admin/tickets");
 });
 
 export default r;
