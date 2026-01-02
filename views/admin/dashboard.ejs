@@ -14,16 +14,27 @@
 
   <div class="wrapA">
     <h1>Dashboard</h1>
-    <p class="muted">If something breaks, it’s probably a missing Printful Variant ID or webhook config.</p>
+    <p class="muted">If something breaks, it’s probably a missing Printful Variant ID, webhook config, or Stripe env var.</p>
 
     <div class="cards">
       <div class="cardA">
         <div class="big"><%= products %></div>
         <div class="muted">Products</div>
       </div>
+
       <div class="cardA">
         <div class="big"><%= orders %></div>
         <div class="muted">Orders</div>
+      </div>
+
+      <div class="cardA">
+        <div class="big"><%= failed %></div>
+        <div class="muted">Failed Orders</div>
+      </div>
+
+      <div class="cardA">
+        <div class="big"><%= ticketsOpen %></div>
+        <div class="muted">Open Tickets</div>
       </div>
     </div>
 
@@ -31,6 +42,7 @@
       <a href="/admin/products">Products</a>
       <a href="/admin/codes">Codes</a>
       <a href="/admin/orders">Orders</a>
+      <a href="/admin/tickets">Tickets</a>
       <a href="/admin/settings">Stripe Fee Settings</a>
     </div>
   </div>
