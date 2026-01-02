@@ -2,15 +2,19 @@ import mongoose from "mongoose";
 
 function makePublicId() {
   // short, readable id for users
-  return `T-${Math.random().toString(36).slice(2, 7).toUpperCase()}${Date.now().toString(36).slice(-3).toUpperCase()}`;
+  return `T-${Math.random().toString(36).slice(2, 7).toUpperCase()}${Date.now()
+    .toString(36)
+    .slice(-3)
+    .toUpperCase()}`;
 }
 
 const TicketMessageSchema = new mongoose.Schema(
   {
     from: { type: String, enum: ["user", "system", "admin"], required: true },
     text: { type: String, required: true },
+    ts: { type: Date, default: Date.now },
   },
-  { _id: false, timestamps: true }
+  { _id: false }
 );
 
 const TicketSchema = new mongoose.Schema(
@@ -33,5 +37,7 @@ const TicketSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+TicketSchema.index({ updatedAt: -1 });
 
 export const Ticket = mongoose.model("Ticket", TicketSchema);
