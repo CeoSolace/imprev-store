@@ -4,6 +4,11 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title><%= product ? product.name : "Product" %> • Imprev Clothing</title>
+
+  <!-- favicon -->
+  <link rel="icon" href="/favicon.ico" />
+  <link rel="apple-touch-icon" href="/favicon.ico" />
+
   <link rel="stylesheet" href="/style.css" />
   <style>
     .crumbs{
@@ -85,10 +90,16 @@
       cursor:pointer;
       position:relative;
       transition: .15s ease;
+      padding: 0;
+      outline: none;
     }
     .thumb:hover{
       transform: translateY(-1px);
-      border-color: rgba(124,92,255,.35);
+      border-color: rgba(255,255,255,.18);
+    }
+    .thumb:focus{
+      border-color: rgba(255,255,255,.28);
+      box-shadow: 0 0 0 4px rgba(255,255,255,.08);
     }
     .thumb img{
       width:100%;
@@ -97,8 +108,8 @@
       display:block;
     }
     .thumb.active{
-      border-color: rgba(124,92,255,.70);
-      box-shadow: 0 0 0 4px rgba(124,92,255,.12);
+      border-color: rgba(255,255,255,.28);
+      box-shadow: 0 0 0 4px rgba(255,255,255,.08);
     }
 
     .galleryHint{
@@ -123,7 +134,6 @@
       color: rgba(238,241,255,.72);
       line-height: 1.55;
       font-size: 14px;
-
       display: -webkit-box;
       -webkit-line-clamp: 4;
       -webkit-box-orient: vertical;
@@ -146,9 +156,41 @@
       font-size: 12px;
     }
     .chipHot{
-      border-color: rgba(46,229,157,.22);
-      background: rgba(46,229,157,.12);
-      color: rgba(210,255,238,.95);
+      border-color: rgba(255,255,255,.16);
+      background: rgba(255,255,255,.06);
+      color: rgba(238,241,255,.92);
+    }
+
+    /* Discord mini card */
+    .discordBox{
+      margin-top: 12px;
+      padding: 14px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.22);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 12px;
+    }
+    .discordLeft{ display:flex; flex-direction:column; gap:6px; }
+    .discordTitle{ font-weight: 1000; letter-spacing:-.2px; }
+    .discordDesc{ color: rgba(238,241,255,.72); font-size: 12px; line-height: 1.35; }
+    .discordBtn{
+      padding: 10px 12px;
+      border-radius: 14px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06);
+      color: rgba(238,241,255,.92);
+      font-weight: 950;
+      text-decoration:none;
+      white-space: nowrap;
+      transition:.15s ease;
+    }
+    .discordBtn:hover{
+      transform: translateY(-1px);
+      border-color: rgba(255,255,255,.20);
+      background: rgba(255,255,255,.08);
     }
 
     .formBox{
@@ -171,8 +213,8 @@
       outline:none;
     }
     .formBox input:focus, .formBox select:focus{
-      border-color: rgba(124,92,255,.55);
-      box-shadow: 0 0 0 4px rgba(124,92,255,.15);
+      border-color: rgba(255,255,255,.22);
+      box-shadow: 0 0 0 4px rgba(255,255,255,.08);
     }
 
     .row2{
@@ -189,14 +231,14 @@
       padding: 12px 14px;
       border-radius: 14px;
       border:1px solid rgba(255,255,255,.10);
-      background: linear-gradient(135deg, rgba(124,92,255,.95), rgba(124,92,255,.55));
-      color:#0b0d12;
+      background: rgba(255,255,255,.08);
+      color: rgba(238,241,255,.95);
       font-weight: 1000;
       letter-spacing:.2px;
       cursor:pointer;
       transition:.15s ease;
     }
-    .btn2:hover{ transform: translateY(-1px); filter: brightness(1.05); }
+    .btn2:hover{ transform: translateY(-1px); background: rgba(255,255,255,.10); }
 
     .notice2{
       margin-top: 12px;
@@ -231,6 +273,7 @@
       </a>
       <nav class="nav">
         <a href="/admin">Admin</a>
+        <a href="https://discord.gg/eUd4qP4DV8" target="_blank" rel="noopener noreferrer">Discord</a>
       </nav>
     </div>
   </header>
@@ -256,11 +299,7 @@
       <div class="pWrap">
         <div class="gallery">
           <div class="galleryMain">
-            <img
-              id="mainImg"
-              src="<%= imgs.length ? imgs[0] : '' %>"
-              alt=""
-            />
+            <img id="mainImg" src="<%= imgs.length ? imgs[0] : '' %>" alt="" />
             <% if (imgs.length > 1) { %>
               <div class="galleryHint">Tap thumbnails or use ← →</div>
             <% } %>
@@ -292,6 +331,14 @@
               <span class="chip">Print-on-demand</span>
               <span class="chip">Ships global</span>
             </div>
+
+            <div class="discordBox">
+              <div class="discordLeft">
+                <div class="discordTitle">Join the Imprev Discord</div>
+                <div class="discordDesc">Drops, updates, early access, and support.</div>
+              </div>
+              <a class="discordBtn" href="https://discord.gg/eUd4qP4DV8" target="_blank" rel="noopener noreferrer">Join</a>
+            </div>
           </div>
 
           <% if (!product.variants || !product.variants.length) { %>
@@ -299,7 +346,7 @@
               <div class="warn2">No variants yet. Add variants in Admin and enable the product.</div>
             </div>
           <% } else { %>
-            <form method="POST" action="/checkout" class="formBox">
+            <form id="checkoutForm" method="POST" action="/checkout" class="formBox">
               <input type="hidden" name="productId" value="<%= product._id %>">
 
               <label>Variant</label>
@@ -372,7 +419,6 @@
               t.addEventListener("click", () => setIndex(Number(t.dataset.i || 0)));
             });
 
-            // keyboard arrows
             document.addEventListener("keydown", (e) => {
               if (e.key === "ArrowLeft") setIndex(idx - 1);
               if (e.key === "ArrowRight") setIndex(idx + 1);
@@ -380,6 +426,44 @@
           })();
         </script>
       <% } %>
+
+      <!-- ✅ Checkout redirect fix (forces real navigation to Stripe) -->
+      <script>
+        (function(){
+          const form = document.getElementById("checkoutForm");
+          if (!form) return;
+
+          form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const fd = new FormData(form);
+            try {
+              const resp = await fetch(form.action, {
+                method: "POST",
+                headers: { "Accept": "application/json" },
+                body: new URLSearchParams(fd),
+              });
+
+              if (!resp.ok) {
+                const t = await resp.text();
+                alert(t || "Checkout failed.");
+                return;
+              }
+
+              const data = await resp.json();
+              if (data && data.url) {
+                window.location.assign(data.url);
+                return;
+              }
+
+              alert("Checkout URL missing.");
+            } catch (err) {
+              // if fetch fails for any reason, fall back to normal submit
+              form.submit();
+            }
+          });
+        })();
+      </script>
 
     <% } %>
   </main>
