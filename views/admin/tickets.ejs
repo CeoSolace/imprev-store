@@ -5,180 +5,81 @@
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>Tickets • Imprev Admin</title>
   <link rel="stylesheet" href="/admin.css" />
-  <style>
-    .topRow{
-      display:flex;
-      justify-content:space-between;
-      align-items:flex-end;
-      gap:12px;
-      flex-wrap:wrap;
-      margin: 10px 0 14px;
-    }
-    .tabs{
-      display:flex;
-      gap:8px;
-      flex-wrap:wrap;
-      align-items:center;
-    }
-    .tab{
-      padding: 10px 12px;
-      border-radius: 12px;
-      border:1px solid rgba(0,0,0,.10);
-      background: rgba(0,0,0,.03);
-      text-decoration:none;
-      color: inherit;
-      font-weight: 900;
-      opacity:.85;
-    }
-    .tab.active{
-      background: rgba(0,0,0,.08);
-      opacity: 1;
-    }
-    .searchRow{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      align-items:center;
-    }
-    .searchRow input{
-      padding: 10px 12px;
-      border-radius: 12px;
-      border:1px solid rgba(0,0,0,.12);
-      min-width: 260px;
-    }
-    .tableWrap{
-      border:1px solid rgba(0,0,0,.10);
-      border-radius: 14px;
-      overflow:hidden;
-      background: #fff;
-    }
-    table{ width:100%; border-collapse:collapse; }
-    th, td{ padding: 12px; text-align:left; vertical-align:top; }
-    thead tr{ background: rgba(0,0,0,.04); }
-    tbody tr{ border-top: 1px solid rgba(0,0,0,.08); }
-    .pill{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      padding: 6px 10px;
-      border-radius: 999px;
-      border:1px solid rgba(0,0,0,.10);
-      background: rgba(0,0,0,.03);
-      font-weight: 900;
-      font-size: 12px;
-      opacity:.9;
-      white-space:nowrap;
-    }
-    .pill.open{ background: rgba(0,0,0,.06); }
-    .pill.closed{ opacity:.7; }
-    .code{ font-weight: 1000; letter-spacing:.5px; }
-    .subj{ font-weight: 900; }
-    .preview{
-      margin-top: 6px;
-      opacity:.75;
-      font-size: 12px;
-      line-height: 1.35;
-      max-width: 70ch;
-    }
-    .right{
-      white-space:nowrap;
-    }
-    .muter{ opacity:.75; font-size:12px; }
-    .btnLink{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      padding: 10px 12px;
-      border-radius: 12px;
-      border:1px solid rgba(0,0,0,.10);
-      background: rgba(0,0,0,.03);
-      text-decoration:none;
-      color: inherit;
-      font-weight: 900;
-    }
-    .btnLink:hover{ background: rgba(0,0,0,.06); }
-  </style>
 </head>
 <body class="a">
   <div class="bar">
     <div class="logo">Imprev Admin</div>
-    <div style="display:flex; gap:10px; align-items:center;">
-      <a href="/admin" style="color:inherit; text-decoration:none; opacity:.85;">Dashboard</a>
-      <form method="POST" action="/admin/logout"><button>Logout</button></form>
+    <div class="barRight">
+      <a class="barLink" href="/admin">Dashboard</a>
+      <form method="POST" action="/admin/logout"><button class="btnSmall" type="submit">Logout</button></form>
     </div>
   </div>
 
   <div class="wrapA">
-    <h1>Tickets</h1>
-    <p class="muted">Open = active. Closed = archived. Users can reopen by replying.</p>
-
-    <div class="topRow">
-      <div class="tabs">
-        <a class="tab <%= status !== 'closed' ? 'active' : '' %>" href="/admin/tickets?status=open<%= q ? ('&q=' + encodeURIComponent(q)) : '' %>">Open</a>
-        <a class="tab <%= status === 'closed' ? 'active' : '' %>" href="/admin/tickets?status=closed<%= q ? ('&q=' + encodeURIComponent(q)) : '' %>">Closed</a>
+    <div class="pageHead">
+      <div>
+        <h1>Tickets</h1>
+        <p class="muted">Open = active. Closed = archived. Users can reopen by replying.</p>
       </div>
 
-      <form class="searchRow" method="GET" action="/admin/tickets">
-        <input type="hidden" name="status" value="<%= status %>">
-        <input name="q" value="<%= q %>" placeholder="Search code, email, subject…">
-        <button class="btnA" type="submit">Search</button>
-        <% if (q) { %>
-          <a class="btnLink" href="/admin/tickets?status=<%= status %>">Clear</a>
-        <% } %>
+      <form class="ticketSearch" method="GET" action="/admin/tickets">
+        <input
+          name="q"
+          value="<%= q || '' %>"
+          placeholder="Search code, email, subject..."
+          autocomplete="off"
+        />
+        <button class="btnSmall" type="submit">Search</button>
       </form>
     </div>
 
-    <div class="tableWrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Ticket</th>
-            <th>User</th>
-            <th>Status</th>
-            <th class="right">Updated</th>
-            <th class="right">Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% if (!tickets || !tickets.length) { %>
-            <tr>
-              <td colspan="5" class="muter">No tickets.</td>
-            </tr>
-          <% } %>
+    <div class="tabs">
+      <a class="tab <%= (tab === 'open') ? 'active' : '' %>" href="/admin/tickets?tab=open<%= q ? ('&q=' + encodeURIComponent(q)) : '' %>">Open</a>
+      <a class="tab <%= (tab === 'closed') ? 'active' : '' %>" href="/admin/tickets?tab=closed<%= q ? ('&q=' + encodeURIComponent(q)) : '' %>">Closed</a>
+    </div>
 
-          <% for (const t of tickets) { %>
-            <tr>
-              <td>
-                <div class="code"><%= t.publicId %></div>
-                <div class="subj"><%= (t.subject || "Support Ticket") %></div>
-                <div class="preview">
-                  <% 
-                    const msgs = (t.messages || []);
-                    const last = msgs.length ? msgs[msgs.length - 1] : null;
-                    const lastText = last ? String(last.text || "") : "";
-                  %>
-                  <%= lastText.slice(0, 140) %><%= lastText.length > 140 ? "…" : "" %>
-                </div>
-              </td>
-              <td>
-                <div><%= (t.email || "—") %></div>
-                <div class="muter"><%= (t.context && t.context.activeCount != null) ? ("Active products: " + t.context.activeCount) : "" %></div>
-              </td>
-              <td>
-                <span class="pill <%= (t.status === 'closed' ? 'closed' : 'open') %>">
-                  <%= (t.status || "open") %>
-                </span>
-              </td>
-              <td class="right">
-                <span class="muter"><%= t.updatedAt ? new Date(t.updatedAt).toLocaleString() : "" %></span>
-              </td>
-              <td class="right">
-                <a class="btnLink" href="/admin/tickets/<%= t.publicId %>">Open</a>
-              </td>
-            </tr>
-          <% } %>
-        </tbody>
-      </table>
+    <div class="tableCard">
+      <div class="tableHead">
+        <div>Ticket</div>
+        <div>User</div>
+        <div>Status</div>
+        <div>Updated</div>
+        <div class="right">Action</div>
+      </div>
+
+      <% if (!tickets || !tickets.length) { %>
+        <div class="emptyRow">
+          No tickets found.
+        </div>
+      <% } else { %>
+        <% for (let i = 0; i < tickets.length; i++) { const t = tickets[i]; %>
+          <div class="tableRow">
+            <div class="cell">
+              <div class="ticketCode"><%= t.publicId %></div>
+              <div class="ticketSub"><%= (t.subject || 'Support Ticket') %></div>
+              <div class="ticketPreview"><%= (t.lastText || '').slice(0, 90) %><%= (t.lastText && t.lastText.length > 90) ? '…' : '' %></div>
+            </div>
+
+            <div class="cell">
+              <div class="ticketEmail"><%= t.email || 'No email' %></div>
+            </div>
+
+            <div class="cell">
+              <span class="pill <%= (t.status === 'closed') ? 'pillClosed' : 'pillOpen' %>">
+                <%= t.status || 'open' %>
+              </span>
+            </div>
+
+            <div class="cell">
+              <%= t.updatedAt ? new Date(t.updatedAt).toLocaleString() : '' %>
+            </div>
+
+            <div class="cell right">
+              <a class="btnGhost" href="/admin/tickets/<%= t.publicId %>">Open</a>
+            </div>
+          </div>
+        <% } %>
+      <% } %>
     </div>
   </div>
 </body>
