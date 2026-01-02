@@ -17,61 +17,38 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
-/* =========================
-   Proxy + app basics
-========================= */
-app.set("trust proxy", 1); // Render/Cloudflare etc.
+// Reverse proxies (Render/Cloudflare)
+app.set("trust proxy", 1);
 app.disable("x-powered-by");
 
-/* =========================
-   Views
-========================= */
+// Views
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
-/* =========================
-   Logging
-========================= */
+// Logging
 app.use(morgan(process.env.NODE_ENV === "production" ? "tiny" : "dev"));
 
-/* =========================
-   Timeouts (basic slowloris resistance)
-========================= */
+// Slowloris-ish timeouts
 app.use((req, res, next) => {
   req.setTimeout(15_000);
   res.setTimeout(15_000);
   next();
 });
 
-/* =========================
-   Force HTTPS (prod only)
-========================= */
+// Force HTTPS in production (proxy-aware)
 function enforceHttps(req, res, next) {
   if (process.env.NODE_ENV !== "production") return next();
-
-  const proto = String(req.headers["x-forwarded-proto"] || "")
-    .split(",")[0]
-    .trim()
-    .toLowerCase();
-
+  const proto = String(req.headers["x-forwarded-proto"] || "").split(",")[0].trim();
   if (proto && proto !== "https") {
-    const host =
-      String(req.headers["x-forwarded-host"] || req.headers.host || "")
-        .split(",")[0]
-        .trim();
-
+    const host = req.headers.host;
     return res.redirect(301, `https://${host}${req.originalUrl}`);
   }
-
   next();
 }
 app.use(enforceHttps);
 
-/* =========================
-   Security headers
-   - CSP allows inline because your EJS uses inline <style>/<script>
-   - COEP off because it breaks external images (cloudinary/etc)
-========================= */
+// Security headers
+// IMPORTANT: Stripe checkout requires allowing stripe.com + js.stripe.com + checkout.stripe.com
 app.use(
   helmet({
     contentSecurityPolicy: {
@@ -80,15 +57,26 @@ app.use(
         defaultSrc: ["'self'"],
         baseUri: ["'self'"],
         frameAncestors: ["'none'"],
-        formAction: ["'self'"],
         objectSrc: ["'none'"],
-        imgSrc: ["'self'", "data:", "https:"],
+
+        // Allow posting to ourselves AND Stripe (your form posts to /checkout, then redirect happens)
+        formAction: ["'self'", "https://checkout.stripe.com"],
+
+        // If any frontend fetches happen later (fine as-is)
         connectSrc: ["'self'", "https:"],
+
+        imgSrc: ["'self'", "data:", "https:"],
         fontSrc: ["'self'", "data:", "https:"],
+
+        // You use inline styles/scripts in EJS, so unsafe-inline stays
         styleSrc: ["'self'", "'unsafe-inline'", "https:"],
-        scriptSrc: ["'self'", "'unsafe-inline'", "https:"],
+        scriptSrc: ["'self'", "'unsafe-inline'", "https://js.stripe.com"],
+
+        // Optional but safe
+        frameSrc: ["'self'", "https://checkout.stripe.com"],
       },
     },
+
     crossOriginEmbedderPolicy: false,
     crossOriginOpenerPolicy: { policy: "same-origin" },
     crossOriginResourcePolicy: { policy: "cross-origin" },
@@ -96,24 +84,21 @@ app.use(
   })
 );
 
+// HSTS
 if (process.env.NODE_ENV === "production") {
   app.use(
     helmet.hsts({
-      maxAge: 15552000, // 180 days
+      maxAge: 15552000,
       includeSubDomains: true,
       preload: false,
     })
   );
 }
 
-/* =========================
-   Cookies
-========================= */
+// Cookies
 app.use(cookieParser());
 
-/* =========================
-   Rate limiting
-========================= */
+// Rate limits
 const globalLimiter = rateLimit({
   windowMs: 60_000,
   limit: 120,
@@ -149,134 +134,64 @@ const checkoutLimiter = rateLimit({
 app.use(globalLimiter);
 app.use(burstLimiter);
 
-/* =========================
-   Basic junk filter
-========================= */
+// Garbage filter
 app.use((req, res, next) => {
   if ((req.originalUrl || "").length > 2000) return res.status(414).send("URI too long.");
   next();
 });
 
-/* =========================
-   Static files
-   - Put favicon.ico in /public/favicon.ico
-========================= */
-app.use(
-  express.static(path.join(__dirname, "public"), {
-    maxAge: "1h",
-    etag: true,
-  })
-);
+// Static
+app.use(express.static(path.join(__dirname, "public"), { maxAge: "1h", etag: true }));
 
-/* =========================
-   Origin/Referer guard (FIXED)
-   - Your old version broke when host/proxy headers didn’t match exactly.
-   - This one parses URLs properly and accepts forwarded hosts + BASE_URL host.
-========================= */
-function safeHostFromReq(req) {
-  return String(req.headers["x-forwarded-host"] || req.headers.host || "")
-    .split(",")[0]
-    .trim()
-    .toLowerCase();
-}
-
-function safeHostFromEnv() {
-  const base = String(process.env.BASE_URL || "").trim();
-  if (!base) return null;
-  try {
-    return new URL(base).host.toLowerCase(); // host includes port if present
-  } catch {
-    return null;
-  }
-}
-
-function hostFromHeaderUrl(h) {
-  const s = String(h || "").trim();
-  if (!s) return null;
-  try {
-    return new URL(s).host.toLowerCase();
-  } catch {
-    // Sometimes referer/origin is garbage. Treat as invalid.
-    return "__invalid__";
-  }
-}
-
+// Origin/Referer guard
+// NOTE: This blocks cross-site POSTs, but allows normal browser POSTs.
+// If you deploy behind weird proxy setups, Origin header might be missing sometimes: that's allowed.
 function originGuard(req, res, next) {
   const m = req.method.toUpperCase();
   if (m === "GET" || m === "HEAD" || m === "OPTIONS") return next();
-
-  // Webhooks must not be blocked
   if (req.originalUrl.startsWith("/webhooks")) return next();
 
-  const reqHost = safeHostFromReq(req);          // actual host we’re serving
-  const envHost = safeHostFromEnv();             // BASE_URL host
-  const allowedHosts = new Set([reqHost]);
-  if (envHost) allowedHosts.add(envHost);
+  const host = String(req.headers.host || "");
+  const origin = String(req.headers.origin || "");
+  const referer = String(req.headers.referer || "");
 
-  const originHost = hostFromHeaderUrl(req.headers.origin);
-  const refererHost = hostFromHeaderUrl(req.headers.referer);
+  const originOk = !origin || origin.includes(`://${host}`);
+  const refererOk = !referer || referer.includes(`://${host}`);
 
-  // If header is missing, allow (some clients/proxies omit)
-  // If header exists but is invalid or not allowed, block.
-  if (originHost && originHost !== "__invalid__" && !allowedHosts.has(originHost)) {
-    return res.status(403).send("Blocked.");
-  }
-  if (refererHost && refererHost !== "__invalid__" && !allowedHosts.has(refererHost)) {
-    return res.status(403).send("Blocked.");
-  }
-  if (originHost === "__invalid__" || refererHost === "__invalid__") {
-    return res.status(403).send("Blocked.");
-  }
-
+  if (!originOk || !refererOk) return res.status(403).send("Blocked.");
   next();
 }
 app.use(originGuard);
 
-/* =========================
-   Webhooks BEFORE body parsers
-   (Stripe signature verification needs raw body in webhookRoutes)
-========================= */
+// Webhooks before JSON (Stripe signature)
 app.use("/webhooks", webhookRoutes);
 
-/* =========================
-   Body parsers (normal routes)
-========================= */
+// Body parsers
 app.use(express.urlencoded({ extended: true, limit: "2mb" }));
 app.use(express.json({ limit: "2mb" }));
 
-/* =========================
-   API docs
-========================= */
+// API docs
 app.get("/api/docs", (req, res) => res.render("api/docs"));
 app.get("/api", (req, res) => res.redirect("/api/docs"));
 
-/* =========================
-   Route-level limits
-========================= */
+// Route-level limits
 app.use("/admin/login", adminLoginLimiter);
 app.use("/checkout", checkoutLimiter);
 
-/* =========================
-   App routes
-========================= */
+// Routes
 app.use("/", publicRoutes);
 app.use("/admin", adminRoutes);
 
-/* =========================
-   404 + error handler
-========================= */
-app.use((req, res) => {
-  res.status(404).send("Not found.");
-});
+// 404
+app.use((req, res) => res.status(404).send("Not found."));
 
+// Error handler (don’t swallow the real error)
 app.use((err, req, res, next) => {
-  console.error(err);
+  console.error("SERVER ERROR:", err);
   res.status(500).send("Server error.");
 });
 
-/* =========================
-   Start
-========================= */
+// Start
 await connectDb();
 
 const port = Number(process.env.PORT || 10000);
