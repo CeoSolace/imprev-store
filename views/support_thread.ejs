@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Ticket <%= ticket.publicId %> • Support</title>
+  <link rel="icon" href="/favicon.ico" />
+  <link rel="apple-touch-icon" href="/favicon.ico" />
+  <link rel="stylesheet" href="/style.css" />
+  <style>
+    .threadTop{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      align-items:flex-end;
+      justify-content:space-between;
+      margin: 10px 0 14px;
+    }
+    .ticketMeta{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+    .codePill{
+      display:inline-flex;
+      width: fit-content;
+      gap:8px;
+      align-items:center;
+      padding: 8px 10px;
+      border-radius: 999px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.18);
+      font-weight: 1000;
+      letter-spacing:.5px;
+    }
+    .subj{
+      font-weight: 1000;
+      font-size: 18px;
+      letter-spacing: -.2px;
+    }
+
+    .chatBox{
+      border-radius: 18px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.03);
+      overflow:hidden;
+    }
+    .messages{
+      padding: 14px;
+      max-height: 58vh;
+      overflow:auto;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      scroll-behavior:smooth;
+    }
+    .msg{
+      max-width: 86%;
+      border-radius: 16px;
+      padding: 10px 12px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.18);
+      line-height: 1.45;
+      font-size: 13px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .msg.user{
+      align-self:flex-end;
+      background: rgba(255,255,255,.06);
+    }
+    .msg.admin{
+      align-self:flex-start;
+      background: rgba(0,0,0,.22);
+    }
+    .msg.system{
+      align-self:flex-start;
+      opacity:.85;
+      font-style: italic;
+      background: rgba(0,0,0,.16);
+    }
+    .metaLine{
+      margin-top:6px;
+      font-size: 11px;
+      opacity:.65;
+      font-weight: 800;
+    }
+
+    .composer{
+      border-top: 1px solid rgba(255,255,255,.10);
+      padding: 12px;
+      display:flex;
+      gap:10px;
+      align-items:flex-end;
+      background: rgba(0,0,0,.10);
+    }
+    .composer textarea{
+      flex:1;
+      min-height: 46px;
+      max-height: 140px;
+      resize: vertical;
+      padding: 12px 12px;
+      border-radius: 14px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.22);
+      color: rgba(238,241,255,.95);
+      outline:none;
+    }
+    .composer textarea:focus{
+      border-color: rgba(255,255,255,.22);
+      box-shadow: 0 0 0 4px rgba(255,255,255,.08);
+    }
+    .composer button{
+      padding: 12px 14px;
+      border-radius: 14px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.08);
+      color: rgba(238,241,255,.95);
+      font-weight: 1000;
+      cursor:pointer;
+      transition:.15s ease;
+      white-space:nowrap;
+    }
+    .composer button:hover{
+      transform: translateY(-1px);
+      background: rgba(255,255,255,.10);
+      border-color: rgba(255,255,255,.18);
+    }
+
+    .statusPill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.18);
+      font-weight: 950;
+      opacity:.9;
+    }
+    .mutedSmall{ opacity:.7; font-size: 12px; }
+    .err{ margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <header class="top">
+    <div class="topInner">
+      <a class="brand" href="/">
+        <span class="brandMark"></span>
+        <span>Imprev Clothing</span>
+      </a>
+      <nav class="nav">
+        <a href="/">Store</a>
+        <a href="/support">New ticket</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div class="threadTop">
+      <div class="ticketMeta">
+        <div class="codePill">Ticket <%= ticket.publicId %></div>
+        <div class="subj"><%= (ticket.subject || "Support Ticket") %></div>
+        <div class="mutedSmall">
+          <% if (ticket.email) { %>
+            <span>Email: <%= ticket.email %></span>
+          <% } else { %>
+            <span>No email provided</span>
+          <% } %>
+        </div>
+      </div>
+
+      <div class="statusPill">
+        Status: <%= ticket.status || "open" %>
+      </div>
+    </div>
+
+    <% if (error) { %>
+      <div class="warn err"><strong>Problem:</strong> <%= error %></div>
+    <% } %>
+
+    <section class="chatBox">
+      <div class="messages" id="msgs">
+        <% const msgs = (ticket.messages || []); %>
+        <% for (let i = 0; i < msgs.length; i++) { const m = msgs[i]; %>
+          <div class="msg <%= (m.from || 'system') %>">
+            <div><%= m.text %></div>
+            <div class="metaLine">
+              <%= (m.from || "system").toUpperCase() %>
+              <% if (m.createdAt) { %>
+                • <%= new Date(m.createdAt).toLocaleString() %>
+              <% } %>
+            </div>
+          </div>
+        <% } %>
+
+        <% if (!msgs.length) { %>
+          <div class="msg system">No messages yet.</div>
+        <% } %>
+      </div>
+
+      <form class="composer" method="POST" action="/support/<%= ticket.publicId %>/message">
+        <textarea name="message" placeholder="Type your reply…" required></textarea>
+        <button type="submit">Send</button>
+      </form>
+    </section>
+
+    <div class="mutedSmall" style="margin-top:10px;">
+      Discord issues? Ask Discord staff. Website support can’t handle Discord moderation or server problems.
+    </div>
+  </main>
+
+  <footer class="foot">© Imprev Clothing</footer>
+
+  <script>
+    (function(){
+      const el = document.getElementById("msgs");
+      if (el) el.scrollTop = el.scrollHeight;
+    })();
+  </script>
+</body>
+</html>
