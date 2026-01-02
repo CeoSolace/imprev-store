@@ -637,6 +637,20 @@
     }
 
     q && q.addEventListener("input", run);
+
+    // Size selection reminder
+    document.addEventListener("change", (e) => {
+      if (e.target.matches && e.target.matches('select[name="size"], input[name="size"]')) {
+        const variantSelect = document.querySelector('select[name="variant"], input[name="variant"]');
+        if (variantSelect) {
+          const sizeValue = e.target.value;
+          const currentVariant = variantSelect.value;
+          if (currentVariant && !currentVariant.toLowerCase().includes(sizeValue.toLowerCase())) {
+            alert("Reminder: Please also update the variant to match your selected size.");
+          }
+        }
+      }
+    });
   </script>
 </body>
 </html>
