@@ -50,8 +50,7 @@ r.get("/", adminOnly, async (req, res) => {
   const products = await Product.countDocuments();
   const orders = await Order.countDocuments();
   const failed = await Order.countDocuments({ status: "failed" });
-
-  const ticketsOpen = await Ticket.countDocuments({ status: { $ne: "closed" } });
+  const ticketsOpen = await Ticket.countDocuments({ status: "open" });
 
   res.render("admin/dashboard", { products, orders, failed, ticketsOpen });
 });
@@ -124,9 +123,9 @@ r.post("/products/:id/remove-image", adminOnly, async (req, res) => {
   res.redirect(`/admin/products/${p._id}`);
 });
 
-/**
- * ✅ MULTI-VARIANT UPSERT (ONE SUBMIT)
- */
+// -------------------------
+// Variants (multi upsert)
+// -------------------------
 r.post("/products/:id/variant", adminOnly, async (req, res) => {
   const p = await Product.findById(req.params.id);
   if (!p) return res.redirect("/admin/products");
@@ -137,7 +136,6 @@ r.post("/products/:id/variant", adminOnly, async (req, res) => {
   const vnameArr = toArr(req.body.vname);
   const sizesArr = toArr(req.body.sizes);
   const printfulVariantIdArr = toArr(req.body.printfulVariantId);
-
   const manufacturingArr = toArr(req.body.manufacturing);
 
   const shipUKArr = toArr(req.body.shipUK);
@@ -319,67 +317,53 @@ r.post("/settings", adminOnly, async (req, res) => {
 });
 
 // -------------------------
-// Tickets (Admin)
+// Tickets (Admin) - SOCKET VERSION
 // -------------------------
 r.get("/tickets", adminOnly, async (req, res) => {
-  const status = String(req.query.status || "open").trim().toLowerCase();
+  const tab = String(req.query.tab || "open").trim() === "closed" ? "closed" : "open";
   const q = String(req.query.q || "").trim();
 
-  const filter = {};
-  if (status === "closed") filter.status = "closed";
-  else filter.status = { $ne: "closed" };
+  const filter = { status: tab };
 
   if (q) {
     const safe = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    filter.$or = [
-      { publicId: q.toUpperCase() },
-      { email: new RegExp(safe, "i") },
-      { subject: new RegExp(safe, "i") },
-    ];
+    const rx = new RegExp(safe, "i");
+    filter.$or = [{ publicId: rx }, { email: rx }, { subject: rx }, { "messages.text": rx }];
   }
 
-  const tickets = await Ticket.find(filter).sort({ updatedAt: -1 }).limit(300).lean();
-  res.render("admin/tickets", { tickets, status, q });
+  const ticketsRaw = await Ticket.find(filter).sort({ updatedAt: -1 }).limit(300).lean();
+
+  const tickets = ticketsRaw.map((t) => ({
+    publicId: t.publicId,
+    email: t.email,
+    subject: t.subject,
+    status: t.status,
+    updatedAt: t.updatedAt,
+    lastText: (t.messages && t.messages.length) ? t.messages[t.messages.length - 1].text : "",
+  }));
+
+  res.render("admin/tickets", { tickets, tab, q });
 });
 
 r.get("/tickets/:publicId", adminOnly, async (req, res) => {
-  const publicId = String(req.params.publicId || "").trim().toUpperCase();
+  const publicId = String(req.params.publicId || "").trim();
   const ticket = await Ticket.findOne({ publicId }).lean();
   if (!ticket) return res.redirect("/admin/tickets");
-  res.render("admin/ticket_view", { ticket, err: "" });
+  res.render("admin/ticket_thread", { ticket });
 });
 
-r.post("/tickets/:publicId/reply", adminOnly, async (req, res) => {
-  const publicId = String(req.params.publicId || "").trim().toUpperCase();
-  const text = String(req.body.message || "").trim().slice(0, 4000);
-  if (!text) return res.redirect(`/admin/tickets/${encodeURIComponent(publicId)}`);
-
-  const ticket = await Ticket.findOne({ publicId });
-  if (!ticket) return res.redirect("/admin/tickets");
-
-  if (ticket.status === "closed") {
-    return res.render("admin/ticket_view", { ticket: ticket.toObject(), err: "Ticket is closed." });
-  }
-
-  ticket.messages.push({ from: "admin", text });
-  await ticket.save();
-
-  res.redirect(`/admin/tickets/${encodeURIComponent(publicId)}`);
-});
-
-r.post("/tickets/:publicId/close", adminOnly, async (req, res) => {
-  const publicId = String(req.params.publicId || "").trim().toUpperCase();
-  const ticket = await Ticket.findOne({ publicId });
-  if (!ticket) return res.redirect("/admin/tickets");
-
-  ticket.status = "closed";
-  await ticket.save();
-
+r.post("/tickets/:publicId/toggle", adminOnly, async (req, res) => {
+  const publicId = String(req.params.publicId || "").trim();
+  const t = await Ticket.findOne({ publicId });
+  if (!t) return res.redirect("/admin/tickets");
+  t.status = t.status === "closed" ? "open" : "closed";
+  t.updatedAt = new Date();
+  await t.save();
   res.redirect(`/admin/tickets/${encodeURIComponent(publicId)}`);
 });
 
 r.post("/tickets/:publicId/delete", adminOnly, async (req, res) => {
-  const publicId = String(req.params.publicId || "").trim().toUpperCase();
+  const publicId = String(req.params.publicId || "").trim();
   await Ticket.deleteOne({ publicId });
   res.redirect("/admin/tickets");
 });
