@@ -1,94 +1,117 @@
 <!doctype html>
 <html>
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title><%= ticket.publicId %> • Ticket</title>
-  <link rel="icon" href="/favicon.ico" />
-  <link rel="stylesheet" href="/style.css" />
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Ticket <%= ticket.publicId %> • Imprev Admin</title>
+  <link rel="stylesheet" href="/admin.css" />
 </head>
-<body>
-  <header class="top">
-    <div class="topInner">
-      <a class="brand" href="/admin"><span class="brandMark"></span><span>Admin</span></a>
-      <nav class="nav">
-        <a href="/admin/tickets">Back</a>
-        <form action="/admin/logout" method="POST" style="display:inline;">
-          <button class="btn" type="submit" style="width:auto;margin:0;padding:10px 12px;border-radius:999px;">Logout</button>
-        </form>
-      </nav>
+<body class="a">
+  <div class="bar">
+    <div class="logo"><a href="/admin">Imprev Admin</a></div>
+    <div class="barRight">
+      <a class="barLink" href="/admin/tickets">Tickets</a>
+      <form method="POST" action="/admin/logout"><button class="btnSmall" type="submit">Logout</button></form>
     </div>
-  </header>
+  </div>
 
-  <main class="wrap">
-    <div class="box">
-      <div class="h"><%= ticket.publicId %> • <%= ticket.status.toUpperCase() %></div>
-      <div class="muted">
-        <%= ticket.email ? ("Email: " + ticket.email + " • ") : "" %>
-        <%= ticket.subject ? ("Subject: " + ticket.subject + " • ") : "" %>
-        <%= ticket.category ? ("Category: " + ticket.category) : "" %>
+  <div class="wrapA">
+    <div class="panel2 chatPanel">
+      <div class="chatHeadA">
+        <div>
+          <div class="chatTitleA">Ticket: <%= ticket.publicId %></div>
+          <div class="muted">
+            <%= ticket.subject || "Support" %>
+            <% if (ticket.email) { %> • <%= ticket.email %> <% } %>
+            • Status: <%= ticket.status %>
+          </div>
+        </div>
+
+        <div class="chatActions">
+          <form method="POST" action="/admin/tickets/<%= ticket.publicId %>/toggle">
+            <button type="submit"><%= ticket.status === "closed" ? "Reopen" : "Close" %></button>
+          </form>
+
+          <form method="POST" action="/admin/tickets/<%= ticket.publicId %>/delete" onsubmit="return confirm('Delete ticket?');">
+            <button class="danger" type="submit">Delete</button>
+          </form>
+        </div>
       </div>
-      <div class="muted">Created: <%= new Date(ticket.createdAt).toLocaleString() %></div>
 
-      <% if (err) { %>
-        <div class="warn"><%= err %></div>
-      <% } %>
-    </div>
-
-    <div class="box" style="margin-top:14px;">
-      <div class="h">Conversation</div>
-      <div style="margin-top:12px; display:flex; flex-direction:column; gap:10px;">
-        <% for (const m of (ticket.messages || [])) { %>
-          <div class="notice" style="border-color: rgba(255,255,255,.10); background: rgba(0,0,0,.18);">
-            <div style="font-weight:950;">
-              <%= (m.from || "user").toUpperCase() %>
-              <span style="opacity:.6;font-weight:800;">
-                • <%= m.createdAt ? new Date(m.createdAt).toLocaleString() : "" %>
-              </span>
+      <div id="log" class="chatLogA">
+        <% for (let i=0;i<ticket.messages.length;i++){ const m=ticket.messages[i]; %>
+          <div class="msgA <%= m.by %>">
+            <div class="msgTopA">
+              <span><%= m.by %></span>
+              <span><%= new Date(m.ts).toLocaleString() %></span>
             </div>
-            <div style="margin-top:8px; white-space:pre-wrap; line-height:1.5; color: rgba(238,241,255,.82);">
-              <%= m.text %>
-            </div>
+            <div><%= m.text %></div>
           </div>
         <% } %>
       </div>
+
+      <div class="chatSendA">
+        <textarea id="text" placeholder="Reply as admin…"></textarea>
+        <button id="send" type="button">Send</button>
+      </div>
     </div>
+  </div>
 
-    <div class="box" style="margin-top:14px;">
-      <div class="h">Reply</div>
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    (function(){
+      const publicId = "<%= ticket.publicId %>";
+      const log = document.getElementById("log");
+      const text = document.getElementById("text");
+      const send = document.getElementById("send");
 
-      <form method="POST" action="/admin/tickets/<%= ticket._id %>/reply">
-        <label>Message</label>
-        <textarea name="text" rows="5" placeholder="Write response..." ></textarea>
+      const socket = io({ path: "/socket.io" });
 
-        <div class="row2">
-          <div>
-            <label>Close ticket?</label>
-            <select name="close">
-              <option value="0">No</option>
-              <option value="1">Yes (close)</option>
-            </select>
-          </div>
-          <div style="display:flex;align-items:flex-end;">
-            <button class="btn" type="submit">Send reply</button>
-          </div>
-        </div>
-      </form>
+      function scrollBottom(){ log.scrollTop = log.scrollHeight; }
+      scrollBottom();
 
-      <% if (ticket.status === "closed") { %>
-        <form method="POST" action="/admin/tickets/<%= ticket._id %>/reopen" style="margin-top:10px;">
-          <button class="btn" type="submit" style="background: rgba(255,255,255,.08); color: rgba(238,241,255,.95); border-color: rgba(255,255,255,.14);">Re-open</button>
-        </form>
-      <% } %>
+      socket.emit("join_ticket", { publicId, role: "admin" }, (res) => {
+        if (!res || !res.ok) {
+          console.error(res);
+          alert("Admin auth failed. Log in again.");
+        }
+      });
 
-      <form method="POST" action="/admin/tickets/<%= ticket._id %>/delete" style="margin-top:10px;">
-        <button class="btn" type="submit" style="background: rgba(255,90,90,.10); color: rgba(255,220,220,.92); border-color: rgba(255,90,90,.20);">
-          Delete ticket
-        </button>
-      </form>
-    </div>
-  </main>
+      socket.on("message", (m) => {
+        const el = document.createElement("div");
+        el.className = "msgA " + (m.by || "user");
+        el.innerHTML =
+          '<div class="msgTopA"><span>' + (m.by||"user") + '</span><span>' +
+          new Date(m.ts).toLocaleString() +
+          '</span></div><div></div>';
+        el.querySelector("div:last-child").textContent = m.text || "";
+        log.appendChild(el);
+        scrollBottom();
+      });
 
-  <footer class="foot">© Imprev Clothing</footer>
+      function doSend(){
+        const v = (text.value || "").trim();
+        if (!v) return;
+        send.disabled = true;
+        socket.emit("send_message", { text: v }, (res) => {
+          send.disabled = false;
+          if (!res || !res.ok) {
+            alert("Failed to send.");
+            return;
+          }
+          text.value = "";
+          text.focus();
+        });
+      }
+
+      send.addEventListener("click", doSend);
+      text.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          doSend();
+        }
+      });
+    })();
+  </script>
 </body>
 </html>
