@@ -5,78 +5,385 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Imprev Clothing</title>
 
-  <!-- Favicon -->
+  <!-- favicon -->
   <link rel="icon" href="/favicon.ico" />
+  <link rel="apple-touch-icon" href="/favicon.ico" />
 
-  <!-- Main styles -->
   <link rel="stylesheet" href="/style.css" />
 
   <style>
-    /* Page-specific layout only — NO COLORS */
-    .hero{
+    /*
+      MONOCHROME OVERRIDES
+      - We keep your layout/styles, but force all “accent” and “gradient” areas to neutral tones.
+      - This avoids nuking 450 lines while still removing blue/purple/green/orange/yellow/pink.
+    */
+
+    /* Kill any bright-looking gradients by overriding in-page sections */
+    .heroMain:before{ background: none !important; }
+    .brandMark{
+      background: rgba(255,255,255,.08) !important;
+      border: 1px solid rgba(255,255,255,.14) !important;
+      box-shadow: 0 6px 18px rgba(0,0,0,.35) !important;
+    }
+
+    /* ---- Layout polish (safe, doesn't break your existing style.css) ---- */
+    .hero2{
+      display:grid;
+      grid-template-columns: 1.15fr .85fr;
+      gap: 14px;
+      align-items: stretch;
       margin: 10px 0 18px;
-      padding: 22px;
+    }
+    @media (max-width: 900px){ .hero2{ grid-template-columns: 1fr; } }
+
+    .heroMain{
       border-radius: 20px;
       border:1px solid rgba(255,255,255,.10);
       background: rgba(255,255,255,.03);
       box-shadow: 0 10px 30px rgba(0,0,0,.35);
+      overflow:hidden;
+      padding: 22px;
+      min-height: 240px;
+      position:relative;
     }
 
-    .heroTitle{
-      font-size: 42px;
-      font-weight: 1000;
-      letter-spacing: -1px;
-    }
-
-    .heroSub{
-      margin-top: 10px;
-      color: rgba(242,244,255,.72);
-      max-width: 70ch;
-      line-height: 1.55;
-    }
-
-    .searchWrap{
-      margin-top: 14px;
-    }
-
-    .search{
-      width:100%;
-      padding: 12px;
-      border-radius: 14px;
+    .kicker{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding: 8px 12px;
+      border-radius: 999px;
       border:1px solid rgba(255,255,255,.12);
-      background: rgba(0,0,0,.25);
-      color: #f2f4ff;
-      outline:none;
+      background: rgba(0,0,0,.20);
+      color: rgba(238,241,255,.78);
+      font-weight: 900;
+      font-size: 13px;
     }
 
-    .search:focus{
-      border-color: rgba(255,255,255,.30);
+    .kDot{
+      width:10px;height:10px;border-radius:999px;
+      background: rgba(255,255,255,.65);
       box-shadow: 0 0 0 4px rgba(255,255,255,.08);
     }
 
-    .empty{
-      padding: 22px;
+    .heroTitle{
+      margin: 10px 0 0;
+      font-size: 44px;
+      letter-spacing: -1px;
+      line-height: 1.05;
+      font-weight: 1000;
+    }
+    @media (max-width: 520px){ .heroTitle{ font-size: 36px; } }
+
+    .heroSub{
+      margin: 10px 0 0;
+      color: rgba(238,241,255,.72);
+      line-height: 1.55;
+      max-width: 70ch;
+      font-size: 15px;
+    }
+
+    .ctaRow{
+      margin-top: 16px;
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+    .cta{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.08);
+      color: rgba(238,241,255,.95);
+      font-weight: 950;
+      letter-spacing:.2px;
+      cursor:pointer;
+      transition:.15s ease;
+      text-decoration:none;
+      white-space: nowrap;
+    }
+    .cta:hover{
+      transform: translateY(-1px);
+      background: rgba(255,255,255,.10);
+      border-color: rgba(255,255,255,.18);
+    }
+    .ctaGhost{
+      background: rgba(0,0,0,.22);
+      color: rgba(238,241,255,.88);
+      border-color: rgba(255,255,255,.10);
+    }
+
+    .heroSide{
       border-radius: 20px;
       border:1px solid rgba(255,255,255,.10);
       background: rgba(255,255,255,.03);
       box-shadow: 0 10px 30px rgba(0,0,0,.30);
+      padding: 16px;
+      display:flex;
+      flex-direction:column;
+      gap: 12px;
     }
 
-    .empty h2{
-      margin:0;
-      font-size: 26px;
+    .search{
+      width: 100%;
+      padding: 12px 12px;
+      border-radius: 14px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.25);
+      color: rgba(238,241,255,.95);
+      outline:none;
+    }
+    .search:focus{
+      border-color: rgba(255,255,255,.22);
+      box-shadow: 0 0 0 4px rgba(255,255,255,.08);
+    }
+
+    .miniGrid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+    }
+    .stat{
+      border-radius: 16px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.20);
+      padding: 12px;
+    }
+    .statTop{
+      color: rgba(238,241,255,.62);
+      font-weight: 900;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing:.25px;
+    }
+    .statVal{
+      margin-top:6px;
       font-weight: 1000;
+      letter-spacing:-.4px;
+      color: rgba(238,241,255,.92);
+    }
+    .statHint{
+      margin-top:6px;
+      color: rgba(238,241,255,.55);
+      font-size: 12px;
+      line-height: 1.35;
     }
 
-    .empty p{
+    /* ---- Cards ---- */
+    .gridBetter{
+      display:grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 14px;
+      margin-top: 14px;
+    }
+    .cardBetter{
+      border-radius: 20px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.03);
+      overflow:hidden;
+      box-shadow: 0 6px 18px rgba(0,0,0,.28);
+      transition: .15s ease;
+      position:relative;
+      text-decoration:none;
+      color: inherit;
+    }
+    .cardBetter:hover{
+      transform: translateY(-2px);
+      border-color: rgba(255,255,255,.18);
+    }
+    .imgWrap{
+      height: 260px;
+      background: rgba(0,0,0,.25);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+    .imgWrap img{
+      width:100%;
+      height:100%;
+      object-fit: cover;
+      display:block;
+    }
+    .imgPh{
+      width:100%;
+      height:100%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      color: rgba(238,241,255,.55);
+      font-weight: 900;
+      letter-spacing:.2px;
+    }
+
+    .cardBody2{ padding: 14px; }
+    .cardTitle{ font-weight: 1000; letter-spacing: -.2px; font-size: 18px; }
+    .cardDesc{
       margin-top: 8px;
-      color: rgba(242,244,255,.70);
+      color: rgba(238,241,255,.68);
+      line-height: 1.5;
+      font-size: 13px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      min-height: 39px;
+    }
+
+    .chips{
+      margin-top: 12px;
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+    .chip{
+      padding: 7px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.18);
+      color: rgba(238,241,255,.82);
+      font-weight: 900;
+      font-size: 12px;
+    }
+    .chipHot{
+      border-color: rgba(255,255,255,.16);
+      background: rgba(255,255,255,.06);
+      color: rgba(238,241,255,.92);
+    }
+
+    .cardMeta{
+      margin-top: 12px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+    }
+    .metaHint{ color: rgba(238,241,255,.55); font-size: 12px; font-weight: 900; }
+    .arrow{
+      width:34px;height:34px;border-radius: 14px;
+      display:flex;align-items:center;justify-content:center;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.04);
+      transition:.15s ease;
+    }
+    .cardBetter:hover .arrow{
+      border-color: rgba(255,255,255,.18);
+      transform: translateX(1px);
+    }
+
+    /* ---- Discord block (monochrome) ---- */
+    .discordCard{
+      border-radius: 16px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.22);
+      padding: 14px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 12px;
+    }
+    .discordLeft{ display:flex; flex-direction:column; gap:6px; }
+    .discordTitle{ font-weight: 1000; letter-spacing:-.2px; color: rgba(238,241,255,.92); }
+    .discordDesc{ color: rgba(238,241,255,.66); font-size: 12px; line-height: 1.35; }
+    .discordBtn{
+      padding: 10px 12px;
+      border-radius: 14px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color: rgba(238,241,255,.92);
+      font-weight: 950;
+      text-decoration:none;
+      white-space: nowrap;
+      transition:.15s ease;
+    }
+    .discordBtn:hover{
+      transform: translateY(-1px);
+      border-color: rgba(255,255,255,.22);
+      background: rgba(255,255,255,.08);
+    }
+
+    /* ---- Policy / legal section ---- */
+    .policyWrap{
+      margin-top: 18px;
+      border-radius: 20px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.03);
+      box-shadow: 0 10px 30px rgba(0,0,0,.25);
+      padding: 18px;
+    }
+    .policyHead{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+    .policyTitle{
+      margin:0;
+      font-size: 18px;
+      font-weight: 1000;
+      letter-spacing: -.2px;
+    }
+    .policyLinks{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .policyLinks a{
+      text-decoration:none;
+      padding: 8px 10px;
+      border-radius: 999px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.18);
+      color: rgba(238,241,255,.85);
+      font-weight: 900;
+      font-size: 12px;
+    }
+    .policyLinks a:hover{ border-color: rgba(255,255,255,.22); }
+
+    .policyGrid{
+      margin-top: 14px;
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    @media (max-width: 900px){ .policyGrid{ grid-template-columns: 1fr; } }
+    .policyCard{
+      border-radius: 16px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.18);
+      padding: 14px;
+    }
+    .policyCard h3{
+      margin: 0 0 8px;
+      font-size: 14px;
+      font-weight: 1000;
+      letter-spacing: -.1px;
+    }
+    .policyCard p, .policyCard li{
+      margin:0;
+      color: rgba(238,241,255,.72);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+    .policyCard ul{
+      margin: 8px 0 0;
+      padding-left: 18px;
+    }
+    .policyFine{
+      margin-top: 12px;
+      color: rgba(238,241,255,.55);
+      font-size: 12px;
+      line-height: 1.45;
     }
   </style>
 </head>
 
 <body>
-  <!-- Header -->
   <header class="top">
     <div class="topInner">
       <a class="brand" href="/">
@@ -85,92 +392,238 @@
       </a>
 
       <nav class="nav">
-        <a href="https://discord.gg/eUd4qP4DV8" target="_blank" rel="noopener noreferrer">Discord</a>
-        <a href="#terms">TOS</a>
-        <a href="#privacy">Privacy</a>
         <% if (products && products.length) { %>
           <a href="/admin">Admin</a>
         <% } %>
+
+        <a href="https://discord.gg/eUd4qP4DV8" target="_blank" rel="noopener noreferrer">Discord</a>
+        <a href="#terms">TOS</a>
+        <a href="#privacy">Privacy</a>
       </nav>
     </div>
   </header>
 
-  <!-- Main -->
   <main class="wrap">
-    <!-- Hero -->
-    <section class="hero">
-      <h1 class="heroTitle">Imprev Clothing</h1>
-      <p class="heroSub">
-        Limited drops. Print-on-demand fulfillment. No inventory, no shortcuts,
-        no nonsense.
-      </p>
+    <section class="hero2">
+      <div class="heroMain">
+        <div class="kicker"><span class="kDot"></span> Drop-ready • Printful fulfillment</div>
+        <h1 class="heroTitle">Imprev Clothing</h1>
+        <p class="heroSub">Clean drops, global shipping.</p>
 
-      <div class="searchWrap">
-        <input
-          id="q"
-          class="search"
-          placeholder="Search products…"
-          autocomplete="off"
-        />
+        <div class="ctaRow">
+          <a class="cta" href="#products">Shop drops</a>
+          <a class="cta ctaGhost" href="#terms">Policies</a>
+        </div>
       </div>
+
+      <aside class="heroSide">
+        <input class="search" id="q" placeholder="Search drops…" autocomplete="off" />
+
+        <div class="miniGrid">
+          <div class="stat">
+            <div class="statTop">Fulfillment</div>
+            <div class="statVal">Printful</div>
+            <div class="statHint">Production + shipping handled automatically.</div>
+          </div>
+          <div class="stat">
+            <div class="statTop">Pricing</div>
+            <div class="statVal">Fee-safe</div>
+            <div class="statHint">Retail covers costs + fees + profit.</div>
+          </div>
+        </div>
+
+        <div class="miniGrid">
+          <div class="stat">
+            <div class="statTop">Drops</div>
+            <div class="statVal"><%= (products && products.length) ? products.length : 0 %></div>
+            <div class="statHint">Live products available right now.</div>
+          </div>
+          <div class="stat">
+            <div class="statTop">Shipping</div>
+            <div class="statVal">Global</div>
+            <div class="statHint">Wherever Printful ships.</div>
+          </div>
+        </div>
+
+        <div class="discordCard">
+          <div class="discordLeft">
+            <div class="discordTitle">Join our Discord</div>
+            <div class="discordDesc">Drops, updates, early access, and support.</div>
+          </div>
+          <a class="discordBtn" href="https://discord.gg/eUd4qP4DV8" target="_blank" rel="noopener noreferrer">Join</a>
+        </div>
+      </aside>
     </section>
 
-    <!-- Products -->
-    <div id="products" class="grid">
+    <div id="products" class="gridBetter">
       <% if (products && products.length) { %>
         <% for (let i = 0; i < products.length; i++) { const p = products[i]; %>
-          <a
-            class="card productCard"
-            href="/p/<%= p._id %>"
-            data-name="<%= (p.name || '').toLowerCase() %>"
-            data-desc="<%= (p.description || '').toLowerCase() %>"
-          >
-            <% if (p.images && p.images[0]) { %>
-              <img src="<%= p.images[0] %>" alt="<%= p.name %>">
-            <% } %>
+          <a class="cardBetter productCard"
+             data-name="<%= (p.name || '').toLowerCase() %>"
+             data-desc="<%= (p.description || '').toLowerCase() %>"
+             href="/p/<%= p._id %>">
 
-            <div class="cardBody">
-              <div class="h"><%= p.name %></div>
-              <div class="d"><%= p.description %></div>
+            <div class="imgWrap">
+              <% if (p.images && p.images[0]) { %>
+                <img src="<%= p.images[0] %>" alt="">
+              <% } else { %>
+                <div class="imgPh">No image</div>
+              <% } %>
+            </div>
+
+            <div class="cardBody2">
+              <div class="cardTitle"><%= p.name %></div>
+              <div class="cardDesc"><%= p.description %></div>
+
+              <div class="chips">
+                <span class="chip chipHot">Drop</span>
+                <span class="chip">No inventory</span>
+                <span class="chip">Ships global</span>
+              </div>
+
+              <div class="cardMeta">
+                <div class="metaHint">View product</div>
+                <div class="arrow">→</div>
+              </div>
             </div>
           </a>
         <% } %>
       <% } else { %>
-        <div class="empty">
-          <h2>No products yet</h2>
-          <p>
-            First drop is being finalized. Check back soon.
-          </p>
+        <div class="heroMain" style="min-height:auto;">
+          <h2 class="heroTitle" style="font-size:28px;">More coming soon</h2>
+          <p class="heroSub">First drop is being finalized. Check back soon.</p>
         </div>
       <% } %>
     </div>
 
-    <!-- Terms -->
-    <section id="terms" class="box" style="margin-top:22px;">
-      <h2 class="h">Terms of Service</h2>
-      <p class="muted">
-        All products are print-on-demand. Refunds are only issued for confirmed
-        defects or damage. Abuse of chargebacks or disputes will result in
-        refusal of service.
-      </p>
+    <section class="policyWrap" id="terms">
+      <div class="policyHead">
+        <h2 class="policyTitle">Terms of Service</h2>
+        <div class="policyLinks">
+          <a href="#refunds">Refunds</a>
+          <a href="#abuse">No Abuse</a>
+          <a href="#freebies">Freebies</a>
+          <a href="#privacy">Privacy</a>
+        </div>
+      </div>
+
+      <div class="policyGrid">
+        <div class="policyCard" id="refunds">
+          <h3>Refunds / Returns</h3>
+          <p>
+            No refunds for buyer’s remorse or wrong size selection. Refunds or replacements are only considered for
+            confirmed defects or damage.
+          </p>
+          <ul>
+            <li>Damage claims must include clear photos.</li>
+            <li>Claims must be made within a reasonable time after delivery.</li>
+            <li>We may offer a replacement first when possible.</li>
+          </ul>
+        </div>
+
+        <div class="policyCard" id="abuse">
+          <h3>No Abuse of the System</h3>
+          <p>
+            Attempts to abuse orders, chargebacks, disputes, refunds, discount systems, or delivery claims can result in
+            cancellation, refusal of service, and permanent bans.
+          </p>
+          <ul>
+            <li>False damage claims: refused service.</li>
+            <li>Repeated chargebacks: refused service.</li>
+            <li>Fraud attempts: refused service.</li>
+          </ul>
+        </div>
+
+        <div class="policyCard" id="freebies">
+          <h3>No Freebies</h3>
+          <p>
+            Free items or discount perks are only provided through official sponsorships or public promotions.
+          </p>
+          <ul>
+            <li>Sponsorships are invite-based or announced publicly.</li>
+            <li>Fake “partnered” claims will be ignored.</li>
+          </ul>
+        </div>
+
+        <div class="policyCard">
+          <h3>Fulfillment + Shipping</h3>
+          <p>
+            Orders are fulfilled via Printful. Production and shipping timelines vary by product and destination.
+          </p>
+          <ul>
+            <li>Customs delays are outside our control.</li>
+            <li>Incorrect shipping details may cause delays or loss.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="policyFine">
+        By ordering from Imprev Clothing, you agree to these terms. We reserve the right to refuse service to protect the brand,
+        customers, and platform integrity.
+      </div>
     </section>
 
-    <!-- Privacy -->
-    <section id="privacy" class="box" style="margin-top:14px;">
-      <h2 class="h">Privacy Policy</h2>
-      <p class="muted">
-        We only collect information required to fulfill your order. Data is not
-        sold or shared beyond fulfillment and payment processing.
-      </p>
+    <section class="policyWrap" id="privacy">
+      <div class="policyHead">
+        <h2 class="policyTitle">Privacy Policy</h2>
+        <div class="policyLinks">
+          <a href="#privacy-data">What we collect</a>
+          <a href="#privacy-use">How we use it</a>
+          <a href="#privacy-sharing">Sharing</a>
+          <a href="#privacy-security">Security</a>
+        </div>
+      </div>
+
+      <div class="policyGrid">
+        <div class="policyCard" id="privacy-data">
+          <h3>What We Collect</h3>
+          <ul>
+            <li>Order details (items purchased, size, quantity).</li>
+            <li>Shipping details needed to deliver your order.</li>
+            <li>Basic technical data for performance and security.</li>
+          </ul>
+        </div>
+
+        <div class="policyCard" id="privacy-use">
+          <h3>How We Use Your Data</h3>
+          <ul>
+            <li>To process and fulfill orders.</li>
+            <li>To provide support and resolve delivery issues.</li>
+            <li>To prevent fraud and abuse.</li>
+          </ul>
+        </div>
+
+        <div class="policyCard" id="privacy-sharing">
+          <h3>Who We Share With</h3>
+          <p>
+            We share only what’s required with fulfillment and payment providers (Printful, Stripe).
+          </p>
+          <ul>
+            <li>We do not sell personal data.</li>
+            <li>No random marketing lists.</li>
+          </ul>
+        </div>
+
+        <div class="policyCard" id="privacy-security">
+          <h3>Security</h3>
+          <p>
+            We use reasonable measures to protect data. No system is invincible.
+          </p>
+          <ul>
+            <li>Keep your order emails and tracking links private.</li>
+            <li>If you suspect fraud, contact support.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="policyFine">
+        We may update this policy if the store changes. The latest version is always shown on this page.
+      </div>
     </section>
   </main>
 
-  <!-- Footer -->
-  <footer class="foot">
-    © <%= new Date().getFullYear() %> Imprev Clothing
-  </footer>
+  <footer class="foot">© Imprev Clothing</footer>
 
-  <!-- Search script -->
   <script>
     const q = document.getElementById("q");
     const cards = Array.from(document.querySelectorAll(".productCard"));
