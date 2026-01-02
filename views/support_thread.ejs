@@ -3,143 +3,84 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Ticket <%= ticket.publicId %> • Support</title>
+  <title>Ticket <%= ticket.publicId %> • Imprev Support</title>
   <link rel="icon" href="/favicon.ico" />
   <link rel="apple-touch-icon" href="/favicon.ico" />
   <link rel="stylesheet" href="/style.css" />
   <style>
-    .threadTop{
-      display:flex;
-      flex-wrap:wrap;
-      gap:10px;
-      align-items:flex-end;
-      justify-content:space-between;
-      margin: 10px 0 14px;
-    }
-    .ticketMeta{
-      display:flex;
-      flex-direction:column;
-      gap:6px;
-    }
-    .codePill{
-      display:inline-flex;
-      width: fit-content;
-      gap:8px;
-      align-items:center;
-      padding: 8px 10px;
-      border-radius: 999px;
-      border:1px solid rgba(255,255,255,.12);
-      background: rgba(0,0,0,.18);
-      font-weight: 1000;
-      letter-spacing:.5px;
-    }
-    .subj{
-      font-weight: 1000;
-      font-size: 18px;
-      letter-spacing: -.2px;
-    }
-
-    .chatBox{
-      border-radius: 18px;
+    .chatWrap{ max-width: 980px; margin: 0 auto; }
+    .chatCard{
+      margin-top: 14px;
+      border-radius: 20px;
       border:1px solid rgba(255,255,255,.10);
       background: rgba(255,255,255,.03);
+      box-shadow: 0 10px 30px rgba(0,0,0,.35);
       overflow:hidden;
     }
-    .messages{
-      padding: 14px;
-      max-height: 58vh;
+    .chatHead{
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .chatTitle{ font-weight: 1000; letter-spacing: -.2px; }
+    .chatMeta{ color: rgba(238,241,255,.62); font-size: 12px; font-weight: 900; }
+    .chatLog{
+      padding: 14px 16px;
+      height: 420px;
       overflow:auto;
       display:flex;
       flex-direction:column;
       gap:10px;
-      scroll-behavior:smooth;
+      background: rgba(0,0,0,.14);
     }
     .msg{
-      max-width: 86%;
+      max-width: 78%;
       border-radius: 16px;
-      padding: 10px 12px;
       border:1px solid rgba(255,255,255,.10);
-      background: rgba(0,0,0,.18);
-      line-height: 1.45;
-      font-size: 13px;
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
-    .msg.user{
-      align-self:flex-end;
-      background: rgba(255,255,255,.06);
-    }
-    .msg.admin{
-      align-self:flex-start;
+      padding: 10px 12px;
       background: rgba(0,0,0,.22);
+      color: rgba(238,241,255,.92);
     }
-    .msg.system{
-      align-self:flex-start;
-      opacity:.85;
-      font-style: italic;
-      background: rgba(0,0,0,.16);
-    }
-    .metaLine{
-      margin-top:6px;
+    .msg.user{ align-self:flex-start; }
+    .msg.admin{ align-self:flex-end; background: rgba(255,255,255,.06); }
+    .msg.system{ align-self:flex-start; opacity:.9; }
+    .msgTop{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom: 6px;
+      color: rgba(238,241,255,.62);
       font-size: 11px;
-      opacity:.65;
-      font-weight: 800;
+      font-weight: 900;
+      letter-spacing:.2px;
+      text-transform: uppercase;
     }
-
-    .composer{
-      border-top: 1px solid rgba(255,255,255,.10);
-      padding: 12px;
+    .chatSend{
+      padding: 12px 14px;
+      border-top: 1px solid rgba(255,255,255,.08);
       display:flex;
       gap:10px;
       align-items:flex-end;
-      background: rgba(0,0,0,.10);
+      background: rgba(255,255,255,.02);
     }
-    .composer textarea{
+    .chatSend textarea{
       flex:1;
-      min-height: 46px;
+      resize:none;
+      min-height: 48px;
       max-height: 140px;
-      resize: vertical;
-      padding: 12px 12px;
-      border-radius: 14px;
-      border:1px solid rgba(255,255,255,.12);
-      background: rgba(0,0,0,.22);
-      color: rgba(238,241,255,.95);
-      outline:none;
     }
-    .composer textarea:focus{
-      border-color: rgba(255,255,255,.22);
-      box-shadow: 0 0 0 4px rgba(255,255,255,.08);
+    .smallNote{
+      margin-top: 10px;
+      color: rgba(238,241,255,.55);
+      font-size: 12px;
+      line-height: 1.4;
+      font-weight: 800;
     }
-    .composer button{
-      padding: 12px 14px;
-      border-radius: 14px;
-      border:1px solid rgba(255,255,255,.12);
-      background: rgba(255,255,255,.08);
-      color: rgba(238,241,255,.95);
-      font-weight: 1000;
-      cursor:pointer;
-      transition:.15s ease;
-      white-space:nowrap;
-    }
-    .composer button:hover{
-      transform: translateY(-1px);
-      background: rgba(255,255,255,.10);
-      border-color: rgba(255,255,255,.18);
-    }
-
-    .statusPill{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      padding: 8px 10px;
-      border-radius: 999px;
-      border:1px solid rgba(255,255,255,.12);
-      background: rgba(0,0,0,.18);
-      font-weight: 950;
-      opacity:.9;
-    }
-    .mutedSmall{ opacity:.7; font-size: 12px; }
-    .err{ margin-top: 10px; }
   </style>
 </head>
 <body>
@@ -156,66 +97,99 @@
     </div>
   </header>
 
-  <main class="wrap">
-    <div class="threadTop">
-      <div class="ticketMeta">
-        <div class="codePill">Ticket <%= ticket.publicId %></div>
-        <div class="subj"><%= (ticket.subject || "Support Ticket") %></div>
-        <div class="mutedSmall">
-          <% if (ticket.email) { %>
-            <span>Email: <%= ticket.email %></span>
-          <% } else { %>
-            <span>No email provided</span>
-          <% } %>
+  <main class="wrap chatWrap">
+    <div class="chatCard">
+      <div class="chatHead">
+        <div>
+          <div class="chatTitle">Support Ticket: <%= ticket.publicId %></div>
+          <div class="chatMeta">
+            <%= ticket.subject ? ticket.subject : "Support" %>
+            <% if (ticket.email) { %> • <%= ticket.email %> <% } %>
+            • Status: <%= ticket.status %>
+          </div>
         </div>
+        <div class="chatMeta">This chat updates live.</div>
       </div>
 
-      <div class="statusPill">
-        Status: <%= ticket.status || "open" %>
+      <div id="log" class="chatLog">
+        <% for (let i=0;i<ticket.messages.length;i++){ const m=ticket.messages[i]; %>
+          <div class="msg <%= m.by %>">
+            <div class="msgTop">
+              <span><%= m.by %></span>
+              <span><%= new Date(m.ts).toLocaleString() %></span>
+            </div>
+            <div><%= m.text %></div>
+          </div>
+        <% } %>
+      </div>
+
+      <div class="chatSend">
+        <textarea id="text" placeholder="Type a message…"></textarea>
+        <button id="send" class="btn" type="button">Send</button>
       </div>
     </div>
 
-    <% if (error) { %>
-      <div class="warn err"><strong>Problem:</strong> <%= error %></div>
-    <% } %>
-
-    <section class="chatBox">
-      <div class="messages" id="msgs">
-        <% const msgs = (ticket.messages || []); %>
-        <% for (let i = 0; i < msgs.length; i++) { const m = msgs[i]; %>
-          <div class="msg <%= (m.from || 'system') %>">
-            <div><%= m.text %></div>
-            <div class="metaLine">
-              <%= (m.from || "system").toUpperCase() %>
-              <% if (m.createdAt) { %>
-                • <%= new Date(m.createdAt).toLocaleString() %>
-              <% } %>
-            </div>
-          </div>
-        <% } %>
-
-        <% if (!msgs.length) { %>
-          <div class="msg system">No messages yet.</div>
-        <% } %>
-      </div>
-
-      <form class="composer" method="POST" action="/support/<%= ticket.publicId %>/message">
-        <textarea name="message" placeholder="Type your reply…" required></textarea>
-        <button type="submit">Send</button>
-      </form>
-    </section>
-
-    <div class="mutedSmall" style="margin-top:10px;">
-      Discord issues? Ask Discord staff. Website support can’t handle Discord moderation or server problems.
+    <div class="smallNote">
+      Discord issues: ask the staff of the Discord. Website support can’t help with Discord moderation/server problems.
     </div>
   </main>
 
   <footer class="foot">© Imprev Clothing</footer>
 
+  <script src="/socket.io/socket.io.js"></script>
   <script>
     (function(){
-      const el = document.getElementById("msgs");
-      if (el) el.scrollTop = el.scrollHeight;
+      const publicId = "<%= ticket.publicId %>";
+      const log = document.getElementById("log");
+      const text = document.getElementById("text");
+      const send = document.getElementById("send");
+
+      const socket = io({ path: "/socket.io" });
+
+      function scrollBottom(){ log.scrollTop = log.scrollHeight; }
+      scrollBottom();
+
+      socket.emit("join_ticket", { publicId, role: "user" }, (res) => {
+        if (!res || !res.ok) {
+          console.error(res);
+          alert("Support session auth failed. Reopen ticket from the same browser you created it.");
+        }
+      });
+
+      socket.on("message", (m) => {
+        const el = document.createElement("div");
+        el.className = "msg " + (m.by || "user");
+        el.innerHTML =
+          '<div class="msgTop"><span>' + (m.by||"user") + '</span><span>' +
+          new Date(m.ts).toLocaleString() +
+          '</span></div><div></div>';
+        el.querySelector("div:last-child").textContent = m.text || "";
+        log.appendChild(el);
+        scrollBottom();
+      });
+
+      function doSend(){
+        const v = (text.value || "").trim();
+        if (!v) return;
+        send.disabled = true;
+        socket.emit("send_message", { text: v }, (res) => {
+          send.disabled = false;
+          if (!res || !res.ok) {
+            alert("Failed to send. Try again.");
+            return;
+          }
+          text.value = "";
+          text.focus();
+        });
+      }
+
+      send.addEventListener("click", doSend);
+      text.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          doSend();
+        }
+      });
     })();
   </script>
 </body>
