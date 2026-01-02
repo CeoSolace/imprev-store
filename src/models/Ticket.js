@@ -1,42 +1,37 @@
 import mongoose from "mongoose";
 
-const MsgSchema = new mongoose.Schema(
+function makePublicId() {
+  // short, readable id for users
+  return `T-${Math.random().toString(36).slice(2, 7).toUpperCase()}${Date.now().toString(36).slice(-3).toUpperCase()}`;
+}
+
+const TicketMessageSchema = new mongoose.Schema(
   {
     from: { type: String, enum: ["user", "system", "admin"], required: true },
     text: { type: String, required: true },
   },
-  { timestamps: true }
+  { _id: false, timestamps: true }
 );
 
 const TicketSchema = new mongoose.Schema(
   {
+    publicId: { type: String, unique: true, index: true, default: makePublicId },
+
     status: { type: String, enum: ["open", "closed"], default: "open", index: true },
+    category: { type: String, default: "other", index: true },
+
     email: { type: String, default: "" },
     subject: { type: String, default: "" },
-    category: {
-      type: String,
-      enum: ["order", "product", "refund", "discord", "other"],
-      default: "other",
-      index: true,
-    },
-    pageUrl: { type: String, default: "" }, // where they submitted from
+
+    pageUrl: { type: String, default: "" },
     userAgent: { type: String, default: "" },
     ip: { type: String, default: "" },
 
-    // Simple “ticket id” humans can reference
-    publicId: { type: String, unique: true, index: true },
+    messages: { type: [TicketMessageSchema], default: [] },
 
-    messages: { type: [MsgSchema], default: [] },
+    lastAdminAt: { type: Date, default: null },
   },
   { timestamps: true }
 );
-
-TicketSchema.pre("validate", function (next) {
-  if (!this.publicId) {
-    // short-ish id, not guessable enough to matter (admin auth still required)
-    this.publicId = `T${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`.toUpperCase();
-  }
-  next();
-});
 
 export const Ticket = mongoose.model("Ticket", TicketSchema);
