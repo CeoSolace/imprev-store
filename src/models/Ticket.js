@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
+import crypto from "crypto";
 
 function makePublicId() {
-  // short, readable id for users
   return `T-${Math.random().toString(36).slice(2, 7).toUpperCase()}${Date.now()
     .toString(36)
     .slice(-3)
@@ -21,6 +21,9 @@ const TicketSchema = new mongoose.Schema(
   {
     publicId: { type: String, unique: true, index: true, default: makePublicId },
 
+    // ✅ hashed ticket access key (never store the raw key)
+    accessKeyHash: { type: String, default: "", index: true },
+
     status: { type: String, enum: ["open", "closed"], default: "open", index: true },
     category: { type: String, default: "other", index: true },
 
@@ -38,6 +41,9 @@ const TicketSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-TicketSchema.index({ updatedAt: -1 });
+// tiny helper (optional)
+TicketSchema.statics.hashKey = function hashKey(key) {
+  return crypto.createHash("sha256").update(String(key || "")).digest("hex");
+};
 
 export const Ticket = mongoose.model("Ticket", TicketSchema);
