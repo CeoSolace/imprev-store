@@ -1,300 +1,189 @@
-:root{
-  --bg:#0b0d12;
-  --panel:#10141c;
-  --panel2:#0d1118;
-  --border:rgba(255,255,255,.10);
-  --text:#f2f4ff;
-  --muted:rgba(242,244,255,.72);
-  --muted2:rgba(242,244,255,.55);
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Imprev Clothing</title>
 
-  --r12:12px;
-  --r16:16px;
-  --r20:20px;
+  <!-- Favicon -->
+  <link rel="icon" href="/favicon.ico" />
 
-  --shadow: 0 10px 30px rgba(0,0,0,.40);
-  --shadow2: 0 6px 18px rgba(0,0,0,.30);
+  <!-- Main styles -->
+  <link rel="stylesheet" href="/style.css" />
 
-  --max: 1120px;
-}
+  <style>
+    /* Page-specific layout only — NO COLORS */
+    .hero{
+      margin: 10px 0 18px;
+      padding: 22px;
+      border-radius: 20px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.03);
+      box-shadow: 0 10px 30px rgba(0,0,0,.35);
+    }
 
-*{ box-sizing:border-box; }
-html,body{ height:100%; }
-body{
-  margin:0;
-  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
-  color:var(--text);
-  background: var(--bg);
-}
+    .heroTitle{
+      font-size: 42px;
+      font-weight: 1000;
+      letter-spacing: -1px;
+    }
 
-a{ color:inherit; text-decoration:none; }
-img{ max-width:100%; display:block; }
+    .heroSub{
+      margin-top: 10px;
+      color: rgba(242,244,255,.72);
+      max-width: 70ch;
+      line-height: 1.55;
+    }
 
-.top{
-  position: sticky;
-  top:0;
-  z-index:20;
-  backdrop-filter: blur(10px);
-  background: rgba(11,13,18,.80);
-  border-bottom:1px solid var(--border);
-}
-.topInner{
-  max-width: var(--max);
-  margin:0 auto;
-  padding:14px 18px;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:12px;
-}
+    .searchWrap{
+      margin-top: 14px;
+    }
 
-.brand{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  font-weight:950;
-  letter-spacing:.4px;
-}
-.brandMark{
-  width:34px; height:34px;
-  border-radius: 10px;
-  background: rgba(255,255,255,.10);
-  border:1px solid rgba(255,255,255,.12);
-  box-shadow: var(--shadow2);
-}
+    .search{
+      width:100%;
+      padding: 12px;
+      border-radius: 14px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.25);
+      color: #f2f4ff;
+      outline:none;
+    }
 
-.nav{
-  display:flex;
-  align-items:center;
-  gap:10px;
-}
-.nav a{
-  padding:10px 12px;
-  border:1px solid var(--border);
-  border-radius: 999px;
-  background: rgba(255,255,255,.03);
-  color: var(--muted);
-  font-weight:800;
-  transition: .15s ease;
-}
-.nav a:hover{
-  transform: translateY(-1px);
-  border-color: rgba(255,255,255,.22);
-  color: var(--text);
-}
+    .search:focus{
+      border-color: rgba(255,255,255,.30);
+      box-shadow: 0 0 0 4px rgba(255,255,255,.08);
+    }
 
-.wrap{
-  max-width: var(--max);
-  margin:0 auto;
-  padding: 18px;
-  overflow-x: hidden;
-}
+    .empty{
+      padding: 22px;
+      border-radius: 20px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.03);
+      box-shadow: 0 10px 30px rgba(0,0,0,.30);
+    }
 
-/* Generic hero (if you still use it anywhere) */
-.hero{
-  margin: 10px 0 18px;
-  padding: 22px;
-  border-radius: var(--r20);
-  border:1px solid var(--border);
-  background: rgba(255,255,255,.03);
-  box-shadow: var(--shadow);
-}
-.h1{
-  margin:0;
-  font-size: 34px;
-  letter-spacing:-.6px;
-}
-.sub{
-  margin: 8px 0 0;
-  color: var(--muted);
-  line-height:1.5;
-  max-width: 70ch;
-}
+    .empty h2{
+      margin:0;
+      font-size: 26px;
+      font-weight: 1000;
+    }
 
-.pills{
-  margin-top: 14px;
-  display:flex;
-  flex-wrap:wrap;
-  gap:8px;
-}
-.pill{
-  padding:8px 10px;
-  border-radius: 999px;
-  border:1px solid var(--border);
-  background: rgba(255,255,255,.03);
-  color: var(--muted);
-  font-weight:800;
-  font-size: 13px;
-}
+    .empty p{
+      margin-top: 8px;
+      color: rgba(242,244,255,.70);
+    }
+  </style>
+</head>
 
-/* Product grid */
-.grid{
-  display:grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap:14px;
-  margin-top: 14px;
-}
+<body>
+  <!-- Header -->
+  <header class="top">
+    <div class="topInner">
+      <a class="brand" href="/">
+        <span class="brandMark"></span>
+        <span>Imprev Clothing</span>
+      </a>
 
-.card{
-  border-radius: var(--r20);
-  border:1px solid var(--border);
-  background: rgba(255,255,255,.03);
-  overflow:hidden;
-  box-shadow: var(--shadow2);
-  transition: .15s ease;
-}
-.card:hover{
-  transform: translateY(-2px);
-  border-color: rgba(255,255,255,.22);
-}
-.card img{
-  height: 240px;
-  width: 100%;
-  object-fit: cover;
-}
-.cardBody{ padding:14px; }
-.h{
-  font-weight:950;
-  font-size: 18px;
-  letter-spacing:-.2px;
-}
-.d{
-  margin-top:8px;
-  color: var(--muted);
-  line-height:1.5;
+      <nav class="nav">
+        <a href="https://discord.gg/eUd4qP4DV8" target="_blank" rel="noopener noreferrer">Discord</a>
+        <a href="#terms">TOS</a>
+        <a href="#privacy">Privacy</a>
+        <% if (products && products.length) { %>
+          <a href="/admin">Admin</a>
+        <% } %>
+      </nav>
+    </div>
+  </header>
 
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  min-height: 39px;
-}
+  <!-- Main -->
+  <main class="wrap">
+    <!-- Hero -->
+    <section class="hero">
+      <h1 class="heroTitle">Imprev Clothing</h1>
+      <p class="heroSub">
+        Limited drops. Print-on-demand fulfillment. No inventory, no shortcuts,
+        no nonsense.
+      </p>
 
-/* Product page layout */
-.product{
-  display:grid;
-  grid-template-columns: 1.05fr .95fr;
-  gap: 18px;
-  align-items:start;
-}
-@media (max-width: 900px){
-  .product{ grid-template-columns: 1fr; }
-}
+      <div class="searchWrap">
+        <input
+          id="q"
+          class="search"
+          placeholder="Search products…"
+          autocomplete="off"
+        />
+      </div>
+    </section>
 
-.gallery{
-  border-radius: var(--r20);
-  border: 1px solid var(--border);
-  background: rgba(255,255,255,.02);
-  overflow:hidden;
-  box-shadow: var(--shadow);
-}
-.gallery img{
-  width:100%;
-  height: 420px;
-  object-fit: cover;
-}
-@media (max-width: 900px){
-  .gallery img{ height: 320px; }
-}
+    <!-- Products -->
+    <div id="products" class="grid">
+      <% if (products && products.length) { %>
+        <% for (let i = 0; i < products.length; i++) { const p = products[i]; %>
+          <a
+            class="card productCard"
+            href="/p/<%= p._id %>"
+            data-name="<%= (p.name || '').toLowerCase() %>"
+            data-desc="<%= (p.description || '').toLowerCase() %>"
+          >
+            <% if (p.images && p.images[0]) { %>
+              <img src="<%= p.images[0] %>" alt="<%= p.name %>">
+            <% } %>
 
-.box{
-  border-radius: var(--r20);
-  border:1px solid var(--border);
-  background: rgba(255,255,255,.03);
-  padding: 16px;
-  box-shadow: var(--shadow);
-}
+            <div class="cardBody">
+              <div class="h"><%= p.name %></div>
+              <div class="d"><%= p.description %></div>
+            </div>
+          </a>
+        <% } %>
+      <% } else { %>
+        <div class="empty">
+          <h2>No products yet</h2>
+          <p>
+            First drop is being finalized. Check back soon.
+          </p>
+        </div>
+      <% } %>
+    </div>
 
-.metaLine{
-  display:flex;
-  gap:10px;
-  flex-wrap:wrap;
-  margin-top: 10px;
-}
-.badge{
-  padding:8px 10px;
-  border-radius: 999px;
-  border:1px solid var(--border);
-  background: rgba(255,255,255,.03);
-  color: var(--muted);
-  font-weight:850;
-  font-size: 13px;
-}
+    <!-- Terms -->
+    <section id="terms" class="box" style="margin-top:22px;">
+      <h2 class="h">Terms of Service</h2>
+      <p class="muted">
+        All products are print-on-demand. Refunds are only issued for confirmed
+        defects or damage. Abuse of chargebacks or disputes will result in
+        refusal of service.
+      </p>
+    </section>
 
-label{
-  display:block;
-  margin-top: 12px;
-  font-weight: 900;
-  color: var(--muted);
-  font-size: 12px;
-  letter-spacing: .25px;
-  text-transform: uppercase;
-}
-input, select, textarea{
-  width:100%;
-  margin-top: 8px;
-  padding: 12px 12px;
-  border-radius: 14px;
-  border:1px solid var(--border);
-  background: rgba(0,0,0,.25);
-  color: var(--text);
-  outline:none;
-  transition: .15s ease;
-}
-input:focus, select:focus, textarea:focus{
-  border-color: rgba(255,255,255,.22);
-  box-shadow: 0 0 0 4px rgba(255,255,255,.08);
-}
+    <!-- Privacy -->
+    <section id="privacy" class="box" style="margin-top:14px;">
+      <h2 class="h">Privacy Policy</h2>
+      <p class="muted">
+        We only collect information required to fulfill your order. Data is not
+        sold or shared beyond fulfillment and payment processing.
+      </p>
+    </section>
+  </main>
 
-.row2{
-  display:grid;
-  grid-template-columns: 1fr 1fr;
-  gap:10px;
-}
-@media (max-width: 520px){
-  .row2{ grid-template-columns: 1fr; }
-}
+  <!-- Footer -->
+  <footer class="foot">
+    © <%= new Date().getFullYear() %> Imprev Clothing
+  </footer>
 
-.btn{
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  padding: 12px 14px;
-  border-radius: 14px;
-  border: 1px solid rgba(255,255,255,.14);
-  background: rgba(255,255,255,.12);
-  color: var(--text);
-  font-weight: 950;
-  letter-spacing: .2px;
-  cursor:pointer;
-  transition: .15s ease;
-  width:100%;
-  margin-top: 14px;
-}
-.btn:hover{ transform: translateY(-1px); background: rgba(255,255,255,.16); }
-.btn:active{ transform: translateY(0px); }
+  <!-- Search script -->
+  <script>
+    const q = document.getElementById("q");
+    const cards = Array.from(document.querySelectorAll(".productCard"));
 
-.notice,
-.warn{
-  margin-top: 12px;
-  padding: 12px;
-  border-radius: var(--r16);
-  border: 1px solid rgba(255,255,255,.12);
-  background: rgba(255,255,255,.04);
-  color: rgba(242,244,255,.78);
-}
+    function run(){
+      const v = (q.value || "").trim().toLowerCase();
+      for (const c of cards){
+        const hay = (c.dataset.name || "") + " " + (c.dataset.desc || "");
+        c.style.display = (!v || hay.includes(v)) ? "" : "none";
+      }
+    }
 
-.muted{
-  margin-top: 10px;
-  color: var(--muted2);
-  font-size: 13px;
-  line-height: 1.45;
-}
-
-.foot{
-  max-width: var(--max);
-  margin: 22px auto 0;
-  padding: 22px 18px;
-  color: var(--muted2);
-  border-top:1px solid var(--border);
-  text-align:center;
-}
+    q && q.addEventListener("input", run);
+  </script>
+</body>
+</html>
