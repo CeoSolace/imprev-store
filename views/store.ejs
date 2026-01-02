@@ -1,626 +1,300 @@
-<!doctype html>
-<html>
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Imprev Clothing</title>
+:root{
+  --bg:#0b0d12;
+  --panel:#10141c;
+  --panel2:#0d1118;
+  --border:rgba(255,255,255,.10);
+  --text:#f2f4ff;
+  --muted:rgba(242,244,255,.72);
+  --muted2:rgba(242,244,255,.55);
 
-  <!-- ✅ Favicon / “logo” -->
-  <link rel="icon" href="/favicon.ico" type="image/x-icon">
-  <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
-  <!-- Optional nicer support if you later add these files -->
-  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-  <meta name="theme-color" content="#0b0d12">
+  --r12:12px;
+  --r16:16px;
+  --r20:20px;
 
-  <link rel="stylesheet" href="/style.css" />
+  --shadow: 0 10px 30px rgba(0,0,0,.40);
+  --shadow2: 0 6px 18px rgba(0,0,0,.30);
 
-  <style>
-    /* ---- Layout polish (safe, doesn't break your existing style.css) ---- */
-    .hero2{
-      display:grid;
-      grid-template-columns: 1.15fr .85fr;
-      gap: 14px;
-      align-items: stretch;
-      margin: 10px 0 18px;
-    }
-    @media (max-width: 900px){ .hero2{ grid-template-columns: 1fr; } }
+  --max: 1120px;
+}
 
-    .heroMain{
-      border-radius: 20px;
-      border:1px solid rgba(255,255,255,.08);
-      background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
-      box-shadow: 0 10px 30px rgba(0,0,0,.35);
-      overflow:hidden;
-      padding: 22px;
-      min-height: 240px;
-      position:relative;
-    }
-    .heroMain:before{
-      content:"";
-      position:absolute;
-      inset:-60px;
-      background:
-        radial-gradient(520px 260px at 25% 10%, rgba(124,92,255,.28), transparent 60%),
-        radial-gradient(420px 240px at 85% 20%, rgba(46,229,157,.14), transparent 60%);
-      pointer-events:none;
-    }
-    .heroMain > *{ position:relative; }
+*{ box-sizing:border-box; }
+html,body{ height:100%; }
+body{
+  margin:0;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  color:var(--text);
+  background: var(--bg);
+}
 
-    .kicker{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      padding: 8px 12px;
-      border-radius: 999px;
-      border:1px solid rgba(255,255,255,.10);
-      background: rgba(0,0,0,.18);
-      color: rgba(238,241,255,.75);
-      font-weight: 900;
-      font-size: 13px;
-    }
-    .kDot{
-      width:10px;height:10px;border-radius:999px;
-      background: linear-gradient(135deg, rgba(46,229,157,1), rgba(124,92,255,1));
-      box-shadow: 0 0 0 4px rgba(124,92,255,.12);
-    }
+a{ color:inherit; text-decoration:none; }
+img{ max-width:100%; display:block; }
 
-    .heroTitle{
-      margin: 10px 0 0;
-      font-size: 44px;
-      letter-spacing: -1px;
-      line-height: 1.05;
-      font-weight: 1000;
-    }
-    @media (max-width: 520px){ .heroTitle{ font-size: 36px; } }
+.top{
+  position: sticky;
+  top:0;
+  z-index:20;
+  backdrop-filter: blur(10px);
+  background: rgba(11,13,18,.80);
+  border-bottom:1px solid var(--border);
+}
+.topInner{
+  max-width: var(--max);
+  margin:0 auto;
+  padding:14px 18px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
 
-    .heroSub{
-      margin: 10px 0 0;
-      color: rgba(238,241,255,.72);
-      line-height: 1.55;
-      max-width: 70ch;
-      font-size: 15px;
-    }
+.brand{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font-weight:950;
+  letter-spacing:.4px;
+}
+.brandMark{
+  width:34px; height:34px;
+  border-radius: 10px;
+  background: rgba(255,255,255,.10);
+  border:1px solid rgba(255,255,255,.12);
+  box-shadow: var(--shadow2);
+}
 
-    .ctaRow{
-      margin-top: 16px;
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      align-items:center;
-    }
-    .cta{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      gap:10px;
-      padding: 12px 14px;
-      border-radius: 14px;
-      border:1px solid rgba(255,255,255,.10);
-      background: linear-gradient(135deg, rgba(124,92,255,.95), rgba(124,92,255,.55));
-      color:#0b0d12;
-      font-weight: 950;
-      letter-spacing:.2px;
-      cursor:pointer;
-      transition:.15s ease;
-      text-decoration:none;
-      white-space: nowrap;
-    }
-    .cta:hover{ transform: translateY(-1px); filter: brightness(1.05); }
-    .ctaGhost{
-      background: rgba(255,255,255,.03);
-      color: rgba(238,241,255,.9);
-      border-color: rgba(255,255,255,.10);
-    }
+.nav{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.nav a{
+  padding:10px 12px;
+  border:1px solid var(--border);
+  border-radius: 999px;
+  background: rgba(255,255,255,.03);
+  color: var(--muted);
+  font-weight:800;
+  transition: .15s ease;
+}
+.nav a:hover{
+  transform: translateY(-1px);
+  border-color: rgba(255,255,255,.22);
+  color: var(--text);
+}
 
-    .heroSide{
-      border-radius: 20px;
-      border:1px solid rgba(255,255,255,.08);
-      background: rgba(255,255,255,.03);
-      box-shadow: 0 10px 30px rgba(0,0,0,.30);
-      padding: 16px;
-      display:flex;
-      flex-direction:column;
-      gap: 12px;
-    }
+.wrap{
+  max-width: var(--max);
+  margin:0 auto;
+  padding: 18px;
+  overflow-x: hidden;
+}
 
-    .search{
-      width: 100%;
-      padding: 12px 12px;
-      border-radius: 14px;
-      border:1px solid rgba(255,255,255,.10);
-      background: rgba(0,0,0,.25);
-      color: rgba(238,241,255,.95);
-      outline:none;
-    }
-    .search:focus{
-      border-color: rgba(124,92,255,.55);
-      box-shadow: 0 0 0 4px rgba(124,92,255,.15);
-    }
+/* Generic hero (if you still use it anywhere) */
+.hero{
+  margin: 10px 0 18px;
+  padding: 22px;
+  border-radius: var(--r20);
+  border:1px solid var(--border);
+  background: rgba(255,255,255,.03);
+  box-shadow: var(--shadow);
+}
+.h1{
+  margin:0;
+  font-size: 34px;
+  letter-spacing:-.6px;
+}
+.sub{
+  margin: 8px 0 0;
+  color: var(--muted);
+  line-height:1.5;
+  max-width: 70ch;
+}
 
-    .miniGrid{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap:10px;
-    }
-    .stat{
-      border-radius: 16px;
-      border:1px solid rgba(255,255,255,.08);
-      background: rgba(0,0,0,.18);
-      padding: 12px;
-    }
-    .statTop{ color: rgba(238,241,255,.65); font-weight: 900; font-size: 12px; text-transform: uppercase; letter-spacing:.25px; }
-    .statVal{ margin-top:6px; font-weight: 1000; letter-spacing:-.4px; }
-    .statHint{ margin-top:6px; color: rgba(238,241,255,.55); font-size: 12px; line-height: 1.35; }
+.pills{
+  margin-top: 14px;
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+.pill{
+  padding:8px 10px;
+  border-radius: 999px;
+  border:1px solid var(--border);
+  background: rgba(255,255,255,.03);
+  color: var(--muted);
+  font-weight:800;
+  font-size: 13px;
+}
 
-    /* ---- Cards ---- */
-    .gridBetter{
-      display:grid;
-      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-      gap: 14px;
-      margin-top: 14px;
-    }
-    .cardBetter{
-      border-radius: 20px;
-      border:1px solid rgba(255,255,255,.08);
-      background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
-      overflow:hidden;
-      box-shadow: 0 6px 18px rgba(0,0,0,.28);
-      transition: .15s ease;
-      position:relative;
-      text-decoration:none;
-      color: inherit;
-    }
-    .cardBetter:hover{
-      transform: translateY(-2px);
-      border-color: rgba(124,92,255,.35);
-    }
-    .imgWrap{
-      height: 260px;
-      background: rgba(0,0,0,.25);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-    }
-    .imgWrap img{
-      width:100%;
-      height:100%;
-      object-fit: cover;
-      display:block;
-    }
-    .imgPh{
-      width:100%;
-      height:100%;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      color: rgba(238,241,255,.55);
-      font-weight: 900;
-      letter-spacing:.2px;
-    }
+/* Product grid */
+.grid{
+  display:grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap:14px;
+  margin-top: 14px;
+}
 
-    .cardBody2{ padding: 14px; }
-    .cardTitle{ font-weight: 1000; letter-spacing: -.2px; font-size: 18px; }
-    .cardDesc{
-      margin-top: 8px;
-      color: rgba(238,241,255,.68);
-      line-height: 1.5;
-      font-size: 13px;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-      min-height: 39px;
-    }
+.card{
+  border-radius: var(--r20);
+  border:1px solid var(--border);
+  background: rgba(255,255,255,.03);
+  overflow:hidden;
+  box-shadow: var(--shadow2);
+  transition: .15s ease;
+}
+.card:hover{
+  transform: translateY(-2px);
+  border-color: rgba(255,255,255,.22);
+}
+.card img{
+  height: 240px;
+  width: 100%;
+  object-fit: cover;
+}
+.cardBody{ padding:14px; }
+.h{
+  font-weight:950;
+  font-size: 18px;
+  letter-spacing:-.2px;
+}
+.d{
+  margin-top:8px;
+  color: var(--muted);
+  line-height:1.5;
 
-    .chips{
-      margin-top: 12px;
-      display:flex;
-      gap:8px;
-      flex-wrap:wrap;
-    }
-    .chip{
-      padding: 7px 10px;
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,.10);
-      background: rgba(0,0,0,.18);
-      color: rgba(238,241,255,.80);
-      font-weight: 900;
-      font-size: 12px;
-    }
-    .chipHot{
-      border-color: rgba(46,229,157,.22);
-      background: rgba(46,229,157,.12);
-      color: rgba(210,255,238,.95);
-    }
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 39px;
+}
 
-    .cardMeta{
-      margin-top: 12px;
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:10px;
-    }
-    .metaHint{ color: rgba(238,241,255,.55); font-size: 12px; font-weight: 900; }
-    .arrow{
-      width:34px;height:34px;border-radius: 14px;
-      display:flex;align-items:center;justify-content:center;
-      border:1px solid rgba(255,255,255,.10);
-      background: rgba(255,255,255,.03);
-      transition:.15s ease;
-    }
-    .cardBetter:hover .arrow{
-      border-color: rgba(124,92,255,.35);
-      transform: translateX(1px);
-    }
+/* Product page layout */
+.product{
+  display:grid;
+  grid-template-columns: 1.05fr .95fr;
+  gap: 18px;
+  align-items:start;
+}
+@media (max-width: 900px){
+  .product{ grid-template-columns: 1fr; }
+}
 
-    /* ---- Discord block (professional) ---- */
-    .discordCard{
-      border-radius: 16px;
-      border:1px solid rgba(255,255,255,.08);
-      background: linear-gradient(135deg, rgba(124,92,255,.14), rgba(46,229,157,.08));
-      padding: 14px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap: 12px;
-    }
-    .discordLeft{ display:flex; flex-direction:column; gap:6px; }
-    .discordTitle{ font-weight: 1000; letter-spacing:-.2px; }
-    .discordDesc{ color: rgba(238,241,255,.72); font-size: 12px; line-height: 1.35; }
-    .discordBtn{
-      padding: 10px 12px;
-      border-radius: 14px;
-      border:1px solid rgba(255,255,255,.12);
-      background: rgba(0,0,0,.20);
-      color: rgba(238,241,255,.92);
-      font-weight: 950;
-      text-decoration:none;
-      white-space: nowrap;
-      transition:.15s ease;
-    }
-    .discordBtn:hover{
-      transform: translateY(-1px);
-      border-color: rgba(124,92,255,.35);
-      background: rgba(0,0,0,.28);
-    }
+.gallery{
+  border-radius: var(--r20);
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.02);
+  overflow:hidden;
+  box-shadow: var(--shadow);
+}
+.gallery img{
+  width:100%;
+  height: 420px;
+  object-fit: cover;
+}
+@media (max-width: 900px){
+  .gallery img{ height: 320px; }
+}
 
-    /* ---- Policy / legal section ---- */
-    .policyWrap{
-      margin-top: 18px;
-      border-radius: 20px;
-      border:1px solid rgba(255,255,255,.08);
-      background: rgba(255,255,255,.03);
-      box-shadow: 0 10px 30px rgba(0,0,0,.25);
-      padding: 18px;
-    }
-    .policyHead{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:12px;
-      flex-wrap:wrap;
-    }
-    .policyTitle{
-      margin:0;
-      font-size: 18px;
-      font-weight: 1000;
-      letter-spacing: -.2px;
-    }
-    .policyLinks{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-    }
-    .policyLinks a{
-      text-decoration:none;
-      padding: 8px 10px;
-      border-radius: 999px;
-      border:1px solid rgba(255,255,255,.10);
-      background: rgba(0,0,0,.18);
-      color: rgba(238,241,255,.85);
-      font-weight: 900;
-      font-size: 12px;
-    }
-    .policyLinks a:hover{ border-color: rgba(124,92,255,.35); }
+.box{
+  border-radius: var(--r20);
+  border:1px solid var(--border);
+  background: rgba(255,255,255,.03);
+  padding: 16px;
+  box-shadow: var(--shadow);
+}
 
-    .policyGrid{
-      margin-top: 14px;
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-    @media (max-width: 900px){ .policyGrid{ grid-template-columns: 1fr; } }
-    .policyCard{
-      border-radius: 16px;
-      border:1px solid rgba(255,255,255,.08);
-      background: rgba(0,0,0,.18);
-      padding: 14px;
-    }
-    .policyCard h3{
-      margin: 0 0 8px;
-      font-size: 14px;
-      font-weight: 1000;
-      letter-spacing: -.1px;
-    }
-    .policyCard p, .policyCard li{
-      margin:0;
-      color: rgba(238,241,255,.72);
-      font-size: 13px;
-      line-height: 1.55;
-    }
-    .policyCard ul{
-      margin: 8px 0 0;
-      padding-left: 18px;
-    }
-    .policyFine{
-      margin-top: 12px;
-      color: rgba(238,241,255,.55);
-      font-size: 12px;
-      line-height: 1.45;
-    }
-  </style>
-</head>
+.metaLine{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top: 10px;
+}
+.badge{
+  padding:8px 10px;
+  border-radius: 999px;
+  border:1px solid var(--border);
+  background: rgba(255,255,255,.03);
+  color: var(--muted);
+  font-weight:850;
+  font-size: 13px;
+}
 
-<body>
-  <header class="top">
-    <div class="topInner">
-      <a class="brand" href="/">
-        <span class="brandMark"></span>
-        <span>Imprev Clothing</span>
-      </a>
+label{
+  display:block;
+  margin-top: 12px;
+  font-weight: 900;
+  color: var(--muted);
+  font-size: 12px;
+  letter-spacing: .25px;
+  text-transform: uppercase;
+}
+input, select, textarea{
+  width:100%;
+  margin-top: 8px;
+  padding: 12px 12px;
+  border-radius: 14px;
+  border:1px solid var(--border);
+  background: rgba(0,0,0,.25);
+  color: var(--text);
+  outline:none;
+  transition: .15s ease;
+}
+input:focus, select:focus, textarea:focus{
+  border-color: rgba(255,255,255,.22);
+  box-shadow: 0 0 0 4px rgba(255,255,255,.08);
+}
 
-      <nav class="nav">
-        <% if (products && products.length) { %>
-          <a href="/admin">Admin</a>
-        <% } %>
+.row2{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:10px;
+}
+@media (max-width: 520px){
+  .row2{ grid-template-columns: 1fr; }
+}
 
-        <a href="https://discord.gg/eUd4qP4DV8" target="_blank" rel="noopener noreferrer">Discord</a>
+.btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.12);
+  color: var(--text);
+  font-weight: 950;
+  letter-spacing: .2px;
+  cursor:pointer;
+  transition: .15s ease;
+  width:100%;
+  margin-top: 14px;
+}
+.btn:hover{ transform: translateY(-1px); background: rgba(255,255,255,.16); }
+.btn:active{ transform: translateY(0px); }
 
-        <a href="#terms">TOS</a>
-        <a href="#privacy">Privacy</a>
-      </nav>
-    </div>
-  </header>
+.notice,
+.warn{
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: var(--r16);
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.04);
+  color: rgba(242,244,255,.78);
+}
 
-  <main class="wrap">
-    <section class="hero2">
-      <div class="heroMain">
-        <div class="kicker"><span class="kDot"></span> Drop-ready • Printful fulfillment</div>
-        <h1 class="heroTitle">Imprev Clothing</h1>
-        <p class="heroSub">Clean drops, global shipping.</p>
+.muted{
+  margin-top: 10px;
+  color: var(--muted2);
+  font-size: 13px;
+  line-height: 1.45;
+}
 
-        <div class="ctaRow">
-          <a class="cta" href="#products">Shop drops</a>
-          <a class="cta ctaGhost" href="#terms">Policies</a>
-        </div>
-      </div>
-
-      <aside class="heroSide">
-        <input class="search" id="q" placeholder="Search drops…" autocomplete="off" />
-
-        <div class="miniGrid">
-          <div class="stat">
-            <div class="statTop">Fulfillment</div>
-            <div class="statVal">Printful</div>
-            <div class="statHint">Production + shipping handled automatically.</div>
-          </div>
-          <div class="stat">
-            <div class="statTop">Pricing</div>
-            <div class="statVal">Fee-safe</div>
-            <div class="statHint">Retail covers costs + fees + profit.</div>
-          </div>
-        </div>
-
-        <div class="miniGrid">
-          <div class="stat">
-            <div class="statTop">Drops</div>
-            <div class="statVal"><%= (products && products.length) ? products.length : 0 %></div>
-            <div class="statHint">Live products available right now.</div>
-          </div>
-          <div class="stat">
-            <div class="statTop">Shipping</div>
-            <div class="statVal">Global</div>
-            <div class="statHint">Wherever Printful ships.</div>
-          </div>
-        </div>
-
-        <div class="discordCard">
-          <div class="discordLeft">
-            <div class="discordTitle">Join our Discord</div>
-            <div class="discordDesc">Drops, updates, early access, and support.</div>
-          </div>
-          <a class="discordBtn" href="https://discord.gg/eUd4qP4DV8" target="_blank" rel="noopener noreferrer">Join</a>
-        </div>
-      </aside>
-    </section>
-
-    <div id="products" class="gridBetter">
-      <% if (products && products.length) { %>
-        <% for (let i = 0; i < products.length; i++) { const p = products[i]; %>
-          <a class="cardBetter productCard"
-             data-name="<%= (p.name || '').toLowerCase() %>"
-             data-desc="<%= (p.description || '').toLowerCase() %>"
-             href="/p/<%= p._id %>">
-
-            <div class="imgWrap">
-              <% if (p.images && p.images[0]) { %>
-                <img src="<%= p.images[0] %>" alt="">
-              <% } else { %>
-                <div class="imgPh">No image</div>
-              <% } %>
-            </div>
-
-            <div class="cardBody2">
-              <div class="cardTitle"><%= p.name %></div>
-              <div class="cardDesc"><%= p.description %></div>
-
-              <div class="chips">
-                <span class="chip chipHot">Drop</span>
-                <span class="chip">No inventory</span>
-                <span class="chip">Ships global</span>
-              </div>
-
-              <div class="cardMeta">
-                <div class="metaHint">View product</div>
-                <div class="arrow">→</div>
-              </div>
-            </div>
-          </a>
-        <% } %>
-      <% } else { %>
-        <div class="heroMain" style="min-height:auto;">
-          <h2 class="heroTitle" style="font-size:28px;">More coming soon</h2>
-          <p class="heroSub">First drop is being finalized. Check back soon.</p>
-        </div>
-      <% } %>
-    </div>
-
-    <!-- In-page TOS + Privacy -->
-    <section class="policyWrap" id="terms">
-      <div class="policyHead">
-        <h2 class="policyTitle">Terms of Service</h2>
-        <div class="policyLinks">
-          <a href="#refunds">Refunds</a>
-          <a href="#abuse">No Abuse</a>
-          <a href="#freebies">Freebies</a>
-          <a href="#privacy">Privacy</a>
-        </div>
-      </div>
-
-      <div class="policyGrid">
-        <div class="policyCard" id="refunds">
-          <h3>Refunds / Returns</h3>
-          <p>
-            We do not offer refunds for buyer’s remorse, wrong size selection, or changing your mind.
-            Refunds or replacements are only considered when an item is <strong>definitely damaged</strong> or has a verified manufacturing defect.
-          </p>
-          <ul>
-            <li>Damage claims must be submitted with clear photos.</li>
-            <li>Claims must be made within a reasonable time after delivery.</li>
-            <li>We may offer a replacement first when possible.</li>
-          </ul>
-        </div>
-
-        <div class="policyCard" id="abuse">
-          <h3>No Abuse of the System</h3>
-          <p>
-            Any attempt to abuse orders, chargebacks, disputes, refunds, discount systems, or delivery claims can result in
-            cancellation, refusal of service, and permanent bans.
-          </p>
-          <ul>
-            <li>False damage claims = banned.</li>
-            <li>Repeated chargebacks = banned.</li>
-            <li>Reselling “as new” while claiming damage = banned.</li>
-          </ul>
-        </div>
-
-        <div class="policyCard" id="freebies">
-          <h3>No Freebies</h3>
-          <p>
-            We don’t hand out free products just because someone asked loudly.
-            Free items, discount codes, or “creator packs” are only provided when you’re <strong>officially sponsored</strong> by Imprev Clothing.
-          </p>
-          <ul>
-            <li>Sponsorships are invite-based or announced publicly.</li>
-            <li>Fake “I’m partnered” claims will get you ignored or blocked.</li>
-          </ul>
-        </div>
-
-        <div class="policyCard">
-          <h3>Fulfillment + Shipping</h3>
-          <p>
-            Orders are fulfilled via Printful. Production and shipping timelines can vary by product and destination.
-            Tracking is provided when available.
-          </p>
-          <ul>
-            <li>We do not control customs delays.</li>
-            <li>Incorrect shipping details provided by the buyer can cause delays or loss.</li>
-          </ul>
-        </div>
-      </div>
-
-      <div class="policyFine">
-        By ordering from Imprev Clothing, you agree to these terms. We reserve the right to refuse service to protect the brand,
-        customers, and platform integrity.
-      </div>
-    </section>
-
-    <section class="policyWrap" id="privacy">
-      <div class="policyHead">
-        <h2 class="policyTitle">Privacy Policy</h2>
-        <div class="policyLinks">
-          <a href="#privacy-data">What we collect</a>
-          <a href="#privacy-use">How we use it</a>
-          <a href="#privacy-sharing">Sharing</a>
-          <a href="#privacy-security">Security</a>
-        </div>
-      </div>
-
-      <div class="policyGrid">
-        <div class="policyCard" id="privacy-data">
-          <h3>What We Collect</h3>
-          <ul>
-            <li>Order details (items purchased, size, quantity).</li>
-            <li>Shipping details (name, address, email) needed to deliver your order.</li>
-            <li>Basic technical data (like browser/device info) for site performance and security.</li>
-          </ul>
-        </div>
-
-        <div class="policyCard" id="privacy-use">
-          <h3>How We Use Your Data</h3>
-          <ul>
-            <li>To process and fulfill orders.</li>
-            <li>To provide support and handle delivery or damage issues.</li>
-            <li>To prevent fraud, abuse, and chargeback scams.</li>
-          </ul>
-        </div>
-
-        <div class="policyCard" id="privacy-sharing">
-          <h3>Who We Share With</h3>
-          <p>
-            We only share necessary information with service providers involved in fulfilling your order
-            (for example, print and shipping partners like Printful).
-          </p>
-          <ul>
-            <li>We do not sell your personal data.</li>
-            <li>We do not share data for random marketing lists.</li>
-          </ul>
-        </div>
-
-        <div class="policyCard" id="privacy-security">
-          <h3>Security</h3>
-          <p>
-            We use reasonable security measures to protect data. Still, the internet is the internet:
-            no system is magically invincible.
-          </p>
-          <ul>
-            <li>Keep your order emails and tracking links private.</li>
-            <li>If you suspect fraud, contact us immediately.</li>
-          </ul>
-        </div>
-      </div>
-
-      <div class="policyFine">
-        We may update this policy if the store changes. The latest version will always be shown on this page.
-      </div>
-    </section>
-  </main>
-
-  <footer class="foot">© Imprev Clothing</footer>
-
-  <script>
-    const q = document.getElementById("q");
-    const cards = Array.from(document.querySelectorAll(".productCard"));
-
-    function run(){
-      const v = (q.value || "").trim().toLowerCase();
-      for (const c of cards){
-        const hay = (c.dataset.name || "") + " " + (c.dataset.desc || "");
-        c.style.display = (!v || hay.includes(v)) ? "" : "none";
-      }
-    }
-
-    q && q.addEventListener("input", run);
-  </script>
-</body>
-</html>
+.foot{
+  max-width: var(--max);
+  margin: 22px auto 0;
+  padding: 22px 18px;
+  color: var(--muted2);
+  border-top:1px solid var(--border);
+  text-align:center;
+}
