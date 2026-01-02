@@ -1,0 +1,81 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Tickets • Admin</title>
+  <link rel="icon" href="/favicon.ico" />
+  <link rel="stylesheet" href="/style.css" />
+  <style>
+    .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between; }
+    .pillLink{ padding:8px 10px; border-radius:999px; border:1px solid rgba(255,255,255,.10); background: rgba(0,0,0,.18); font-weight:900; }
+    .tbl{ width:100%; border-collapse: collapse; margin-top: 12px; }
+    .tbl th,.tbl td{ padding:12px 10px; border-top: 1px solid rgba(255,255,255,.08); text-align:left; font-size: 13px; }
+    .tbl th{ color: rgba(238,241,255,.75); font-weight: 950; }
+    .tag{ padding:6px 10px; border-radius:999px; border:1px solid rgba(255,255,255,.10); background: rgba(255,255,255,.04); font-weight: 900; font-size: 12px; display:inline-block; }
+  </style>
+</head>
+<body>
+  <header class="top">
+    <div class="topInner">
+      <a class="brand" href="/admin">
+        <span class="brandMark"></span>
+        <span>Admin</span>
+      </a>
+      <nav class="nav">
+        <a href="/admin">Dashboard</a>
+        <a href="/admin/tickets">Tickets</a>
+        <a href="/">Store</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="box">
+      <div class="row">
+        <div>
+          <div class="h">Support Tickets</div>
+          <div class="muted">Open/closed tickets. Click one to respond or delete.</div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <a class="pillLink" href="/admin/tickets?status=open">Open</a>
+          <a class="pillLink" href="/admin/tickets?status=closed">Closed</a>
+        </div>
+      </div>
+
+      <% if (!tickets || !tickets.length) { %>
+        <div class="muted" style="margin-top:12px;">No tickets.</div>
+      <% } else { %>
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th>Ticket</th>
+              <th>Category</th>
+              <th>Subject</th>
+              <th>Email</th>
+              <th>Updated</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+          <% for (const t of tickets) { %>
+            <tr>
+              <td>
+                <a href="/admin/tickets/<%= t._id %>"><strong><%= t.publicId %></strong></a>
+              </td>
+              <td><span class="tag"><%= t.category %></span></td>
+              <td><%= t.subject || "(no subject)" %></td>
+              <td><%= t.email || "-" %></td>
+              <td><%= new Date(t.updatedAt).toLocaleString() %></td>
+              <td><%= t.status %></td>
+            </tr>
+          <% } %>
+          </tbody>
+        </table>
+      <% } %>
+    </section>
+  </main>
+
+  <footer class="foot">© Imprev Admin</footer>
+</body>
+</html>
