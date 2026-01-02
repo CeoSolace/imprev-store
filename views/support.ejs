@@ -7,35 +7,6 @@
   <link rel="icon" href="/favicon.ico" />
   <link rel="apple-touch-icon" href="/favicon.ico" />
   <link rel="stylesheet" href="/style.css" />
-  <style>
-    .notice a{
-      color: inherit;
-      font-weight: 1000;
-      text-decoration: underline;
-      text-underline-offset: 3px;
-    }
-    .notice a:hover{ opacity:.9; }
-    .ticketLinkRow{
-      margin-top: 10px;
-      padding-top: 10px;
-      border-top: 1px solid rgba(255,255,255,.10);
-      display:flex;
-      flex-wrap:wrap;
-      gap:10px;
-      align-items:center;
-    }
-    .pillCode{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      padding: 8px 10px;
-      border-radius: 999px;
-      border:1px solid rgba(255,255,255,.12);
-      background: rgba(0,0,0,.18);
-      font-weight: 1000;
-      letter-spacing:.5px;
-    }
-  </style>
 </head>
 <body>
   <header class="top">
@@ -53,27 +24,10 @@
   <main class="wrap">
     <section class="box">
       <div class="h">Support</div>
-      <div class="muted">Send a ticket. You’ll get an automatic reply, then staff can respond in Admin.</div>
+      <div class="muted">Create a ticket. You’ll get an automatic reply, then staff can respond here.</div>
 
       <% if (error) { %>
         <div class="warn"><strong>Problem:</strong> <%= error %></div>
-      <% } %>
-
-      <% if (created) { %>
-        <div class="notice">
-          <div class="ticketLinkRow">
-            <span class="pillCode">Ticket: <%= created.publicId %></span>
-            <a href="<%= created.threadUrl %>">Open your support thread</a>
-          </div>
-
-          <div style="margin-top:10px;">
-            <strong>Auto-reply:</strong> <%= created.systemReply %>
-          </div>
-
-          <div class="muted" style="margin-top:10px;">
-            Save the link. That’s your chat thread. Close the tab, come back later, same link.
-          </div>
-        </div>
       <% } %>
 
       <form method="POST" action="/support">
