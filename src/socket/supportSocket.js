@@ -1,12 +1,33 @@
+import crypto from "crypto";
 import { Ticket } from "../models/Ticket.js";
 import { verifyJwt } from "../middleware/jwt.js";
 
-function isAdminFromCookie(socket) {
-  const cookie = String(socket.handshake.headers.cookie || "");
-  const m = cookie.match(/(?:^|;\s*)admin_token=([^;]+)/);
-  if (!m) return null;
-  const token = decodeURIComponent(m[1]);
-  return verifyJwt(token); // returns payload or null
+function parseCookie(header) {
+  const out = {};
+  const s = String(header || "");
+  s.split(";").forEach((part) => {
+    const i = part.indexOf("=");
+    if (i === -1) return;
+    const k = part.slice(0, i).trim();
+    const v = part.slice(i + 1).trim();
+    out[k] = decodeURIComponent(v);
+  });
+  return out;
+}
+
+function cookieName(publicId) {
+  return `st_${String(publicId).replace(/[^A-Za-z0-9_-]/g, "")}`;
+}
+
+function hashKey(key) {
+  return crypto.createHash("sha256").update(String(key || "")).digest("hex");
+}
+
+function getAdminPayload(socket) {
+  const cookies = parseCookie(socket.handshake.headers.cookie || "");
+  const token = cookies.admin_token;
+  if (!token) return null;
+  return verifyJwt(token);
 }
 
 export function attachSupportSockets(io) {
@@ -17,6 +38,23 @@ export function attachSupportSockets(io) {
 
       const ticket = await Ticket.findOne({ publicId }).lean();
       if (!ticket) return;
+
+      const admin = getAdminPayload(socket);
+
+      // user auth via cookie (set by /support/:id route)
+      const cookies = parseCookie(socket.handshake.headers.cookie || "");
+      const userKey = cookies[cookieName(publicId)];
+
+      const userOk =
+        !!userKey &&
+        !!ticket.accessKeyHash &&
+        hashKey(userKey) === ticket.accessKeyHash;
+
+      // allow join if admin OR authorized user
+      if (!admin && !userOk) {
+        socket.emit("ticket:authfail", { message: "Access denied. Use your ticket link to reopen." });
+        return;
+      }
 
       socket.join(`ticket:${publicId}`);
 
@@ -35,19 +73,28 @@ export function attachSupportSockets(io) {
       publicId = String(publicId || "").trim();
       text = String(text || "").trim().slice(0, 4000);
       role = role === "admin" ? "admin" : "user";
-
       if (!publicId || !text) return;
 
       const ticket = await Ticket.findOne({ publicId });
       if (!ticket) return;
 
-      // only admins can post as admin
+      const admin = getAdminPayload(socket);
+
       if (role === "admin") {
-        const adminPayload = isAdminFromCookie(socket);
-        if (!adminPayload) return; // silently ignore
+        if (!admin) return; // no admin cookie, no admin messages
+      } else {
+        // user auth via cookie
+        const cookies = parseCookie(socket.handshake.headers.cookie || "");
+        const userKey = cookies[cookieName(publicId)];
+        const userOk =
+          !!userKey &&
+          !!ticket.accessKeyHash &&
+          hashKey(userKey) === ticket.accessKeyHash;
+
+        if (!userOk) return;
       }
 
-      // If closed, users posting reopens it. Admin can post without reopening.
+      // closed ticket: user message reopens
       if (ticket.status === "closed" && role === "user") ticket.status = "open";
 
       const msg = { from: role, text, ts: new Date() };
