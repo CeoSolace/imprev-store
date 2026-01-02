@@ -5,15 +5,31 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title><%= product ? product.name : "Product" %> • Imprev Clothing</title>
 
-  <!-- favicon (served from /public/favicon.ico) -->
-  <link rel="icon" href="/favicon.ico" sizes="any">
-  <link rel="shortcut icon" href="/favicon.ico">
-  <link rel="apple-touch-icon" href="/favicon.ico">
-  <meta name="theme-color" content="#0b0d12">
+  <!-- favicon -->
+  <link rel="icon" href="/favicon.ico" />
+  <link rel="apple-touch-icon" href="/favicon.ico" />
 
   <link rel="stylesheet" href="/style.css" />
 
   <style>
+    /* Use favicon as visible logo (on-page). Tab icon color depends on the actual .ico file. */
+    .brandMark{
+      width:34px;height:34px;
+      border-radius:10px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      box-shadow: 0 6px 18px rgba(0,0,0,.35);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      overflow:hidden;
+    }
+    .brandMark img{
+      width:22px;height:22px;
+      display:block;
+      filter: grayscale(1) brightness(1.35) contrast(1.15);
+    }
+
     .crumbs{
       display:flex;
       gap:10px;
@@ -44,7 +60,6 @@
       overflow:hidden;
     }
 
-    /* --- Gallery with thumbnails --- */
     .gallery{
       border-radius: 20px;
       border:1px solid rgba(255,255,255,.10);
@@ -71,7 +86,7 @@
       display:flex;
       gap:10px;
       padding: 12px;
-      border-top: 1px solid rgba(255,255,255,.08);
+      border-top: 1px solid rgba(255,255,255,.10);
       background: rgba(0,0,0,.14);
       overflow-x:auto;
       scrollbar-width: thin;
@@ -91,18 +106,16 @@
       overflow:hidden;
       background: rgba(255,255,255,.03);
       cursor:pointer;
-      position:relative;
       transition: .15s ease;
-
       padding: 0;
       outline: none;
     }
     .thumb:hover{
       transform: translateY(-1px);
-      border-color: rgba(255,255,255,.20);
+      border-color: rgba(255,255,255,.22);
     }
     .thumb:focus{
-      border-color: rgba(255,255,255,.28);
+      border-color: rgba(255,255,255,.26);
       box-shadow: 0 0 0 4px rgba(255,255,255,.08);
     }
     .thumb img{
@@ -131,42 +144,13 @@
       user-select:none;
     }
 
-    .pHead{ padding: 16px; }
-    .pTitle{ font-size: 34px; letter-spacing:-.8px; font-weight: 1000; line-height:1.08; }
-    .pDesc{
-      margin-top: 10px;
-      color: rgba(238,241,255,.72);
-      line-height: 1.55;
-      font-size: 14px;
-
-      display: -webkit-box;
-      -webkit-line-clamp: 4;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }
-
-    .chips{
-      margin-top: 12px;
-      display:flex;
-      gap:8px;
-      flex-wrap:wrap;
-    }
-    .chip{
-      padding: 7px 10px;
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,.12);
-      background: rgba(0,0,0,.18);
-      color: rgba(238,241,255,.82);
-      font-weight: 900;
-      font-size: 12px;
-    }
+    /* Neutralize “hot” chips if your CSS has color versions */
     .chipHot{
-      border-color: rgba(255,255,255,.16);
-      background: rgba(255,255,255,.06);
-      color: rgba(238,241,255,.92);
+      border-color: rgba(255,255,255,.16) !important;
+      background: rgba(255,255,255,.06) !important;
+      color: rgba(238,241,255,.92) !important;
     }
 
-    /* Discord mini card (monochrome) */
     .discordBox{
       margin-top: 12px;
       padding: 14px;
@@ -180,7 +164,7 @@
     }
     .discordLeft{ display:flex; flex-direction:column; gap:6px; }
     .discordTitle{ font-weight: 1000; letter-spacing:-.2px; }
-    .discordDesc{ color: rgba(238,241,255,.66); font-size: 12px; line-height: 1.35; }
+    .discordDesc{ color: rgba(238,241,255,.72); font-size: 12px; line-height: 1.35; }
     .discordBtn{
       padding: 10px 12px;
       border-radius: 14px;
@@ -197,79 +181,6 @@
       border-color: rgba(255,255,255,.22);
       background: rgba(255,255,255,.08);
     }
-
-    .formBox{
-      padding: 16px;
-    }
-    .formBox label{
-      display:block;
-      margin-top: 10px;
-      margin-bottom: 6px;
-      font-weight: 950;
-      color: rgba(238,241,255,.82);
-    }
-    .formBox input, .formBox select{
-      width:100%;
-      padding: 12px 12px;
-      border-radius: 14px;
-      border:1px solid rgba(255,255,255,.10);
-      background: rgba(0,0,0,.22);
-      color: rgba(238,241,255,.95);
-      outline:none;
-    }
-    .formBox input:focus, .formBox select:focus{
-      border-color: rgba(255,255,255,.22);
-      box-shadow: 0 0 0 4px rgba(255,255,255,.08);
-    }
-
-    .row2{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin-top: 10px;
-    }
-    @media (max-width: 520px){ .row2{ grid-template-columns: 1fr; } }
-
-    .btn2{
-      margin-top: 14px;
-      width:100%;
-      padding: 12px 14px;
-      border-radius: 14px;
-      border:1px solid rgba(255,255,255,.14);
-      background: rgba(255,255,255,.10);
-      color: rgba(238,241,255,.95);
-      font-weight: 1000;
-      letter-spacing:.2px;
-      cursor:pointer;
-      transition:.15s ease;
-    }
-    .btn2:hover{
-      transform: translateY(-1px);
-      background: rgba(255,255,255,.12);
-      border-color: rgba(255,255,255,.20);
-    }
-
-    .notice2{
-      margin-top: 12px;
-      padding: 12px;
-      border-radius: 16px;
-      border:1px solid rgba(255,255,255,.10);
-      background: rgba(0,0,0,.18);
-      color: rgba(238,241,255,.70);
-      line-height: 1.45;
-      font-size: 12px;
-      font-weight: 800;
-    }
-    .warn2{
-      margin-top: 12px;
-      padding: 12px;
-      border-radius: 16px;
-      border:1px solid rgba(255,255,255,.12);
-      background: rgba(0,0,0,.22);
-      color: rgba(238,241,255,.88);
-      font-weight: 900;
-      line-height: 1.45;
-    }
   </style>
 </head>
 
@@ -277,7 +188,9 @@
   <header class="top">
     <div class="topInner">
       <a class="brand" href="/">
-        <span class="brandMark"></span>
+        <span class="brandMark">
+          <img src="/favicon.ico" alt="Imprev logo">
+        </span>
         <span>Imprev Clothing</span>
       </a>
       <nav class="nav">
@@ -387,23 +300,9 @@
                 </div>
               </div>
 
-              <div class="row2">
-                <div>
-                  <label>Reference code (optional)</label>
-                  <input name="referenceCode" placeholder="SOLCORD_DROP" />
-                </div>
-                <div>
-                  <label>Referral code (optional)</label>
-                  <input name="referralCode" placeholder="IMPREV10" />
-                </div>
-              </div>
-
               <button class="btn2" type="submit">Checkout</button>
 
-              <div class="notice2">
-                Price is calculated at checkout to cover Printful + shipping + Stripe fees + your profit.
-                Country code controls region pricing.
-              </div>
+              <div class="notice2">You should be redirected to Stripe Checkout.</div>
             </form>
           <% } %>
         </div>
