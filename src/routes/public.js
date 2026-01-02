@@ -2,7 +2,6 @@ import { Router } from "express";
 import { Product } from "../models/Product.js";
 import { Code } from "../models/Code.js";
 import { Settings } from "../models/Settings.js";
-import { Ticket } from "../models/Ticket.js";
 import { stripe } from "../config/stripe.js";
 import {
   priceToHitProfit,
@@ -14,36 +13,23 @@ import {
 const r = Router();
 
 function getBaseUrl(req) {
+  // Prefer env BASE_URL if set
   const envUrl = (process.env.BASE_URL || "").trim();
   if (envUrl) return envUrl.replace(/\/+$/, "");
+
+  // Fallback: derive from request headers
   const proto =
     String(req.headers["x-forwarded-proto"] || "").split(",")[0].trim() ||
     (req.secure ? "https" : "http");
+
   const host = req.headers.host;
   return `${proto}://${host}`;
 }
 
-function autoReply(message) {
-  const m = String(message || "").toLowerCase();
-
-  if (m.includes("discord")) {
-    return "Discord issues: ask the staff in the Discord. Website support can’t help with Discord moderation/server problems.";
-  }
-  if (m.includes("disabled") || m.includes("removed") || m.includes("not available")) {
-    return "If a product is disabled it’s usually temporary (limited drop ended) or it was pulled due to a listing/config error. If it returns, it’ll show back in the store.";
-  }
-  if (m.includes("refund") || m.includes("return")) {
-    return "Refunds are only considered for confirmed damage/defects. If it’s damage: reply with photos + your receipt email + delivery country.";
-  }
-  if (m.includes("price") || m.includes("charged") || m.includes("payment")) {
-    return "Payments are handled via Stripe checkout. If you were charged and something failed, reply with the receipt email and what happened.";
-  }
-  return "Ticket received. Staff will respond here when available.";
-}
-
-// Store
 r.get("/", async (req, res) => {
-  const products = await Product.find({ active: true }).sort({ createdAt: -1 }).lean();
+  const products = await Product.find({ active: true })
+    .sort({ createdAt: -1 })
+    .lean();
   res.render("store", { products });
 });
 
@@ -56,49 +42,6 @@ r.get("/p/:id", async (req, res) => {
 r.get("/success", (req, res) => res.render("success"));
 r.get("/cancel", (req, res) => res.render("cancel"));
 
-// Support (new ticket)
-r.get("/support", (req, res) => {
-  res.render("support", { error: "", created: null });
-});
-
-r.post("/support", async (req, res) => {
-  try {
-    const email = String(req.body.email || "").trim().slice(0, 160);
-    const subject = String(req.body.subject || "").trim().slice(0, 140);
-    const message = String(req.body.message || "").trim().slice(0, 4000);
-    if (!message) return res.render("support", { error: "Message required.", created: null });
-
-    const systemReply = autoReply(message);
-
-    const t = await Ticket.create({
-      email,
-      subject,
-      pageUrl: String(req.headers.referer || "").slice(0, 600),
-      userAgent: String(req.headers["user-agent"] || "").slice(0, 300),
-      ip: String(req.ip || "").slice(0, 80),
-      messages: [
-        { from: "user", text: message },
-        { from: "system", text: systemReply },
-      ],
-    });
-
-    return res.redirect(`/support/${encodeURIComponent(t.publicId)}`);
-  } catch (e) {
-    console.error("support create error", e);
-    return res.render("support", { error: "Failed to create ticket.", created: null });
-  }
-});
-
-// Support thread (live)
-r.get("/support/:publicId", async (req, res) => {
-  const publicId = String(req.params.publicId || "").trim().toUpperCase();
-  const ticket = await Ticket.findOne({ publicId }).lean();
-  if (!ticket) return res.status(404).send("Not found");
-
-  res.render("support_thread", { ticket });
-});
-
-// Checkout (your code, kept)
 r.post("/checkout", async (req, res) => {
   try {
     const { productId, variantSku, size, qty, country, referenceCode, referralCode, email } = req.body;
@@ -112,13 +55,16 @@ r.post("/checkout", async (req, res) => {
     const variant = (product.variants || []).find((v) => v.sku === variantSku);
     if (!variant) return res.status(400).send("Bad variant");
 
+    // size validation
     const normSize = String(size || "").trim();
     if (!normSize) return res.status(400).send("Bad size");
     if (Array.isArray(variant.sizes) && variant.sizes.length && !variant.sizes.includes(normSize)) {
       return res.status(400).send("Bad size");
     }
+
     if (!variant.printfulVariantId) return res.status(400).send("Variant not configured");
 
+    // optional codes
     if (referenceCode) {
       const ok = await Code.findOne({
         type: "reference",
@@ -159,6 +105,7 @@ r.post("/checkout", async (req, res) => {
 
     const baseCost = manufacturing + ship;
 
+    // This function MUST return minor units (pence), integer
     let unitAmount = priceToHitProfit(
       baseCost,
       profit,
@@ -168,9 +115,11 @@ r.post("/checkout", async (req, res) => {
 
     unitAmount = Math.round(Number(unitAmount || 0));
     if (!Number.isFinite(unitAmount) || unitAmount < 50) {
-      return res.status(500).send("Pricing error");
+      // 50 = 0.50 in minor units, prevents dumb “£0.90” type outcomes
+      return res.status(500).send("Pricing error (unit amount too low)");
     }
 
+    // safety check
     const fee = stripeFeeForAmount(unitAmount, { percent: feeModel.percent, fixed: feeModel.fixed });
     const realized = unitAmount - fee - baseCost;
     if (realized < profit) return res.status(400).send("Pricing safety check failed");
@@ -188,7 +137,7 @@ r.post("/checkout", async (req, res) => {
           quantity,
           price_data: {
             currency: currency.toLowerCase(),
-            unit_amount: unitAmount,
+            unit_amount: unitAmount, // MUST be integer in minor units
             product_data: {
               name: `Imprev Clothing - ${product.name}`,
               description: `${variant.name} | ${normSize}`,
@@ -213,7 +162,12 @@ r.post("/checkout", async (req, res) => {
       },
     });
 
-    if (!session?.url) return res.status(500).send("Stripe session error");
+    if (!session?.url) {
+      console.error("Stripe session missing URL:", session);
+      return res.status(500).send("Stripe session error");
+    }
+
+    console.log("Stripe checkout URL:", session.url);
     return res.redirect(303, session.url);
   } catch (e) {
     console.error("CHECKOUT ERROR:", e);
