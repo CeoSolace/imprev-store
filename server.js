@@ -17,7 +17,7 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
-// Reverse proxies (Render/Cloudflare/etc.)
+// Render / reverse proxies (Render, Cloudflare, etc.)
 app.set("trust proxy", 1);
 app.disable("x-powered-by");
 
@@ -28,7 +28,7 @@ app.set("views", path.join(__dirname, "views"));
 // Logging
 app.use(morgan(process.env.NODE_ENV === "production" ? "tiny" : "dev"));
 
-// Basic slowloris resistance
+// Timeouts (basic slowloris resistance)
 app.use((req, res, next) => {
   req.setTimeout(15_000);
   res.setTimeout(15_000);
@@ -38,11 +38,7 @@ app.use((req, res, next) => {
 // Force HTTPS in production (via proxy header)
 function enforceHttps(req, res, next) {
   if (process.env.NODE_ENV !== "production") return next();
-  const proto = String(req.headers["x-forwarded-proto"] || "")
-    .split(",")[0]
-    .trim()
-    .toLowerCase();
-
+  const proto = String(req.headers["x-forwarded-proto"] || "").split(",")[0].trim();
   if (proto && proto !== "https") {
     const host = req.headers.host;
     return res.redirect(301, `https://${host}${req.originalUrl}`);
@@ -52,6 +48,8 @@ function enforceHttps(req, res, next) {
 app.use(enforceHttps);
 
 // Security headers
+// CSP allows inline because your EJS uses inline <style>/<script>.
+// COEP is OFF because it breaks Cloudinary images. CORP is cross-origin to allow them.
 app.use(
   helmet({
     contentSecurityPolicy: {
@@ -62,21 +60,21 @@ app.use(
         frameAncestors: ["'none'"],
         formAction: ["'self'"],
         objectSrc: ["'none'"],
-        imgSrc: ["'self'", "data:", "https:"], // allow external images
+        imgSrc: ["'self'", "data:", "https:"], // allow Cloudinary + https images
         connectSrc: ["'self'", "https:"],
         fontSrc: ["'self'", "data:", "https:"],
         styleSrc: ["'self'", "'unsafe-inline'", "https:"],
         scriptSrc: ["'self'", "'unsafe-inline'", "https:"],
       },
     },
-    crossOriginEmbedderPolicy: false, // keep external images working
+    crossOriginEmbedderPolicy: false, // ✅ DO NOT break external images
     crossOriginOpenerPolicy: { policy: "same-origin" },
-    crossOriginResourcePolicy: { policy: "cross-origin" },
+    crossOriginResourcePolicy: { policy: "cross-origin" }, // ✅ allow external resources
     referrerPolicy: { policy: "strict-origin-when-cross-origin" },
   })
 );
 
-// HSTS only in production
+// HSTS (only in production)
 if (process.env.NODE_ENV === "production") {
   app.use(
     helmet.hsts({
@@ -90,15 +88,13 @@ if (process.env.NODE_ENV === "production") {
 // Cookies
 app.use(cookieParser());
 
-// Rate limits
-const ipKey = (req) => req.ip;
-
+// Rate limits (global + burst + route-specific)
 const globalLimiter = rateLimit({
   windowMs: 60_000,
   limit: 120,
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: ipKey,
+  keyGenerator: (req) => req.ip,
 });
 
 const burstLimiter = rateLimit({
@@ -106,7 +102,7 @@ const burstLimiter = rateLimit({
   limit: 30,
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: ipKey,
+  keyGenerator: (req) => req.ip,
 });
 
 const adminLoginLimiter = rateLimit({
@@ -114,7 +110,7 @@ const adminLoginLimiter = rateLimit({
   limit: 10,
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: ipKey,
+  keyGenerator: (req) => req.ip,
 });
 
 const checkoutLimiter = rateLimit({
@@ -122,7 +118,7 @@ const checkoutLimiter = rateLimit({
   limit: 15,
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: ipKey,
+  keyGenerator: (req) => req.ip,
 });
 
 app.use(globalLimiter);
@@ -135,39 +131,20 @@ app.use((req, res, next) => {
 });
 
 // Static files (favicon.ico, style.css, etc.)
-app.use(
-  express.static(path.join(__dirname, "public"), {
-    maxAge: "1h",
-    etag: true,
-  })
-);
+app.use(express.static(path.join(__dirname, "public"), { maxAge: "1h", etag: true }));
 
-/**
- * Origin/Referer guard (blocks cross-site POSTs). Webhooks exempt.
- * Note: Browsers sometimes omit Origin on same-site form POSTs, so we allow missing origin/referer.
- * We also parse URL instead of doing a lazy includes().
- */
+// Origin/Referer guard (blocks cross-site POSTs). Webhooks exempt.
 function originGuard(req, res, next) {
   const m = req.method.toUpperCase();
   if (m === "GET" || m === "HEAD" || m === "OPTIONS") return next();
   if (req.originalUrl.startsWith("/webhooks")) return next();
 
-  const host = String(req.headers.host || "").trim();
-  const origin = String(req.headers.origin || "").trim();
-  const referer = String(req.headers.referer || "").trim();
+  const host = String(req.headers.host || "");
+  const origin = String(req.headers.origin || "");
+  const referer = String(req.headers.referer || "");
 
-  const hostMatches = (value) => {
-    if (!value) return true;
-    try {
-      const u = new URL(value);
-      return u.host === host;
-    } catch {
-      return false;
-    }
-  };
-
-  const originOk = !origin || hostMatches(origin);
-  const refererOk = !referer || hostMatches(referer);
+  const originOk = !origin || origin.includes(`://${host}`);
+  const refererOk = !referer || referer.includes(`://${host}`);
 
   if (!originOk || !refererOk) return res.status(403).send("Blocked.");
   next();
@@ -200,7 +177,7 @@ app.use((req, res) => {
 
 // Error handler
 app.use((err, req, res, next) => {
-  console.error("SERVER_ERROR:", err);
+  console.error(err);
   res.status(500).send("Server error.");
 });
 
