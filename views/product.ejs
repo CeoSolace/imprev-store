@@ -125,6 +125,14 @@
       -webkit-text-fill-color: transparent;
     }
 
+    .pPrice{
+      margin-top: 8px;
+      font-size: 26px;
+      font-weight: 1000;
+      color: #ffffff;
+      letter-spacing: -.5px;
+    }
+
     .pDesc{
       margin-top: 12px;
       color: var(--muted);
@@ -290,6 +298,9 @@
         <div class="pCard">
           <div class="pHead">
             <div class="pTitle"><%= product.name %></div>
+            <% if (product.basePrice) { %>
+              <div class="pPrice">£<%= product.basePrice.toFixed ? product.basePrice.toFixed(2) : product.basePrice %></div>
+            <% } %>
             <div class="pDesc"><%= product.description %></div>
 
             <div class="chips">
