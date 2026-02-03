@@ -1,5 +1,4 @@
 import { Router } from "express";
-import fetch from "node-fetch";
 import { Product } from "../models/Product.js";
 import { Code } from "../models/Code.js";
 import { Settings } from "../models/Settings.js";
@@ -75,17 +74,23 @@ r.post("/apply", async (req, res) => {
       ]
     };
 
-    await fetch(
+    const resp = await fetch(
       `https://discord.com/api/v10/channels/${process.env.CHANNEL_ID_APP}/messages`,
       {
         method: "POST",
         headers: {
-          Authorization: `Bot ${process.env.DISCORD_TOKEN}`,
+          "Authorization": `Bot ${process.env.DISCORD_TOKEN}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify(payload),
       }
     );
+
+    if (!resp.ok) {
+      const text = await resp.text();
+      console.error("DISCORD ERROR:", text);
+      return res.status(500).send("Discord send failed");
+    }
 
     res.redirect("/hiring?sent=1");
   } catch (err) {
@@ -98,7 +103,16 @@ r.post("/apply", async (req, res) => {
 
 r.post("/checkout", async (req, res) => {
   try {
-    const { productId, variantSku, size, qty, country, referenceCode, referralCode, email } = req.body;
+    const {
+      productId,
+      variantSku,
+      size,
+      qty,
+      country,
+      referenceCode,
+      referralCode,
+      email
+    } = req.body;
 
     const quantity = Math.max(1, Math.min(10, Number(qty || 1)));
     const region = regionFromCountry(country || "GB");
@@ -119,6 +133,7 @@ r.post("/checkout", async (req, res) => {
 
     const settings = await Settings.findOne().lean();
     const feeModel = settings?.stripeFees?.[region] || settings?.stripeFees?.ROW;
+    if (!feeModel) return res.status(500).send("Stripe fee model missing");
 
     const manufacturing = Number(variant.costs?.manufacturing ?? 0);
     const ship = Number(variant.costs?.shipping?.[region] ?? 0);
@@ -132,6 +147,9 @@ r.post("/checkout", async (req, res) => {
     );
 
     unitAmount = Math.round(unitAmount);
+    if (!Number.isFinite(unitAmount) || unitAmount < 50) {
+      return res.status(500).send("Pricing error");
+    }
 
     const baseUrl = getBaseUrl(req);
 
@@ -140,7 +158,9 @@ r.post("/checkout", async (req, res) => {
       customer_email: email || undefined,
       success_url: `${baseUrl}/success`,
       cancel_url: `${baseUrl}/cancel`,
-      shipping_address_collection: { allowed_countries: ALLOWED_SHIP_COUNTRIES },
+      shipping_address_collection: {
+        allowed_countries: ALLOWED_SHIP_COUNTRIES
+      },
       line_items: [
         {
           quantity,
@@ -156,6 +176,10 @@ r.post("/checkout", async (req, res) => {
         },
       ],
     });
+
+    if (!session?.url) {
+      return res.status(500).send("Stripe session error");
+    }
 
     res.redirect(303, session.url);
   } catch (e) {
