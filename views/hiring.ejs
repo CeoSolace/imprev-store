@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Hiring – Imprev Clothing</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+
+<body>
+<header class="top">
+  <div class="topInner">
+    <a class="brand" href="/">
+      <span class="brandMark"></span>
+      <span>Imprev Clothing</span>
+    </a>
+    <nav class="nav">
+      <a href="/">Home</a>
+      <a href="/hiring">Hiring</a>
+      <a href="https://discord.gg/eUd4qP4DV8" target="_blank">Discord</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="heroMain">
+    <h1 class="heroTitle">We’re Hiring</h1>
+    <p class="heroSub">
+      Small team. Real impact. No corporate fluff.
+    </p>
+  </section>
+
+  <% if (sent) { %>
+    <div class="policyWrap">
+      <h2 class="policyTitle">Application Sent</h2>
+      <p class="heroSub">Thanks — we’ll be in touch if it’s a fit.</p>
+    </div>
+  <% } %>
+
+  <section class="policyWrap">
+    <h2 class="policyTitle">Open Positions</h2>
+
+    <div class="policyGrid">
+      <div class="policyCard">
+        <h3>Marketer</h3>
+        <p>Social growth, drops, campaigns, reach.</p>
+      </div>
+
+      <div class="policyCard">
+        <h3>Designer</h3>
+        <p>Streetwear graphics, concepts, brand visuals.</p>
+      </div>
+
+      <div class="policyCard">
+        <h3>Manager</h3>
+        <p>Ops, coordination, keeping things moving.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="policyWrap">
+    <h2 class="policyTitle">Apply</h2>
+
+    <form method="POST" action="/apply" class="policyCard">
+      <input class="search" name="name" placeholder="Name" required />
+      <input class="search" name="email" placeholder="Email" required />
+      <input class="search" name="discord" placeholder="Discord (optional)" />
+
+      <select class="search" name="role" required>
+        <option value="">Select role</option>
+        <option>Marketer</option>
+        <option>Designer</option>
+        <option>Manager</option>
+      </select>
+
+      <textarea
+        class="search"
+        name="message"
+        rows="5"
+        placeholder="Why should we work with you?"
+        required></textarea>
+
+      <button class="cta" type="submit">Submit Application</button>
+    </form>
+  </section>
+</main>
+
+<footer class="foot">© Imprev Clothing</footer>
+</body>
+</html>
