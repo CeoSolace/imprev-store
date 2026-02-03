@@ -1,32 +1,32 @@
 import { Router } from "express";
 import { Product } from "../models/Product.js";
-import { Code } from "../models/Code.js";
 import { Settings } from "../models/Settings.js";
 import { stripe } from "../config/stripe.js";
 import {
   priceToHitProfit,
-  stripeFeeForAmount,
   regionFromCountry,
   ALLOWED_SHIP_COUNTRIES,
 } from "../config/money.js";
+import multer from "multer";
+import path from "path";
+import fetch from "node-fetch"; // in case it's not globally available
 
 const r = Router();
 
 /* ---------------- BASE URL ---------------- */
-
 function getBaseUrl(req) {
   const envUrl = (process.env.BASE_URL || "").trim();
   if (envUrl) return envUrl.replace(/\/+$/, "");
 
   const proto =
-    String(req.headers["x-forwarded-proto"] || "").split(",")[0].trim() ||
-    (req.secure ? "https" : "http");
+    String(req.headers["x-forwarded-proto"] || "")
+      .split(",")[0]
+      .trim() || (req.secure ? "https" : "http");
 
   return `${proto}://${req.headers.host}`;
 }
 
 /* ---------------- STORE ---------------- */
-
 r.get("/", async (req, res) => {
   const products = await Product.find({ active: true })
     .sort({ createdAt: -1 })
@@ -44,34 +44,52 @@ r.get("/success", (req, res) => res.render("success"));
 r.get("/cancel", (req, res) => res.render("cancel"));
 
 /* ---------------- HIRING ---------------- */
+// Multer setup for resume upload
+const storage = multer.memoryStorage();
+const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
+  fileFilter: (req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    if ([".pdf", ".doc", ".docx"].includes(ext)) cb(null, true);
+    else cb(new Error("Resume must be a PDF or DOC/DOCX"));
+  },
+});
 
 r.get("/hiring", (req, res) => {
   res.render("hiring", { sent: req.query.sent === "1" });
 });
 
-r.post("/apply", async (req, res) => {
+r.post("/apply", upload.single("resume"), async (req, res) => {
   try {
-    const { name, email, discord, role, message } = req.body;
+    const { name, email, discord, role, experience, message } = req.body;
 
-    if (!name || !email || !role || !message) {
-      return res.status(400).send("Missing fields");
+    if (!name || !email || !role || !experience || !message) {
+      return res.status(400).send("Missing required fields");
     }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) return res.status(400).send("Invalid email format");
+
+    if (!req.file) return res.status(400).send("Resume file is required (PDF/DOC/DOCX)");
 
     const payload = {
       embeds: [
         {
-          title: "📥 New Imprev Application",
+          title: "📥 New Imprev Volunteer Application",
           color: 0x2f3136,
           fields: [
             { name: "Name", value: name, inline: true },
             { name: "Role", value: role, inline: true },
             { name: "Email", value: email },
             { name: "Discord", value: discord || "N/A" },
-            { name: "Message", value: message.slice(0, 1000) }
+            { name: "Experience", value: experience.slice(0, 1000) },
+            { name: "Message", value: message.slice(0, 1000) },
+            { name: "Resume", value: req.file.originalname },
           ],
-          timestamp: new Date().toISOString()
-        }
-      ]
+          timestamp: new Date().toISOString(),
+        },
+      ],
     };
 
     const resp = await fetch(
@@ -79,7 +97,7 @@ r.post("/apply", async (req, res) => {
       {
         method: "POST",
         headers: {
-          "Authorization": `Bot ${process.env.DISCORD_TOKEN}`,
+          Authorization: `Bot ${process.env.DISCORD_TOKEN}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify(payload),
@@ -89,18 +107,17 @@ r.post("/apply", async (req, res) => {
     if (!resp.ok) {
       const text = await resp.text();
       console.error("DISCORD ERROR:", text);
-      return res.status(500).send("Discord send failed");
+      return res.status(500).send("Failed to send application to Discord");
     }
 
     res.redirect("/hiring?sent=1");
   } catch (err) {
     console.error("APPLICATION ERROR:", err);
-    res.status(500).send("Failed to submit application");
+    res.status(500).send(err.message || "Failed to submit application");
   }
 });
 
-/* ---------------- CHECKOUT (UNCHANGED) ---------------- */
-
+/* ---------------- CHECKOUT ---------------- */
 r.post("/checkout", async (req, res) => {
   try {
     const {
@@ -109,9 +126,7 @@ r.post("/checkout", async (req, res) => {
       size,
       qty,
       country,
-      referenceCode,
-      referralCode,
-      email
+      email,
     } = req.body;
 
     const quantity = Math.max(1, Math.min(10, Number(qty || 1)));
@@ -120,7 +135,7 @@ r.post("/checkout", async (req, res) => {
     const product = await Product.findById(productId).lean();
     if (!product || !product.active) return res.status(400).send("Bad product");
 
-    const variant = (product.variants || []).find(v => v.sku === variantSku);
+    const variant = (product.variants || []).find((v) => v.sku === variantSku);
     if (!variant) return res.status(400).send("Bad variant");
 
     const normSize = String(size || "").trim();
@@ -145,8 +160,8 @@ r.post("/checkout", async (req, res) => {
       { percent: feeModel.percent, fixed: feeModel.fixed },
       10
     );
-
     unitAmount = Math.round(unitAmount);
+
     if (!Number.isFinite(unitAmount) || unitAmount < 50) {
       return res.status(500).send("Pricing error");
     }
@@ -159,7 +174,7 @@ r.post("/checkout", async (req, res) => {
       success_url: `${baseUrl}/success`,
       cancel_url: `${baseUrl}/cancel`,
       shipping_address_collection: {
-        allowed_countries: ALLOWED_SHIP_COUNTRIES
+        allowed_countries: ALLOWED_SHIP_COUNTRIES,
       },
       line_items: [
         {
@@ -177,9 +192,7 @@ r.post("/checkout", async (req, res) => {
       ],
     });
 
-    if (!session?.url) {
-      return res.status(500).send("Stripe session error");
-    }
+    if (!session?.url) return res.status(500).send("Stripe session error");
 
     res.redirect(303, session.url);
   } catch (e) {
