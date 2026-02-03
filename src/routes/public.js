@@ -9,7 +9,6 @@ import {
 } from "../config/money.js";
 import multer from "multer";
 import path from "path";
-import fetch from "node-fetch"; // in case it's not globally available
 
 const r = Router();
 
@@ -68,6 +67,7 @@ r.post("/apply", upload.single("resume"), async (req, res) => {
       return res.status(400).send("Missing required fields");
     }
 
+    // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) return res.status(400).send("Invalid email format");
 
