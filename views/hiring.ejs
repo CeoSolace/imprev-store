@@ -3,20 +3,139 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Hiring – Imprev Clothing</title>
+  <title>Volunteer – Imprev Clothing</title>
   <link rel="stylesheet" href="/style.css" />
+  <style>
+    body {
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      color: #333;
+      background-color: #f9f9f9;
+    }
+
+    header.top {
+      background-color: #111;
+      color: white;
+      padding: 1rem 2rem;
+    }
+
+    .topInner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .brand {
+      text-decoration: none;
+      color: white;
+      font-weight: bold;
+      font-size: 1.5rem;
+    }
+
+    nav.nav a {
+      color: white;
+      text-decoration: none;
+      margin-left: 1.5rem;
+      font-weight: 500;
+    }
+
+    main.wrap {
+      max-width: 900px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+    }
+
+    .heroMain {
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+
+    .heroTitle {
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .heroSub {
+      font-size: 1.2rem;
+      color: #555;
+    }
+
+    .policyWrap {
+      background: white;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+
+    .policyTitle {
+      font-size: 1.8rem;
+      margin-bottom: 1rem;
+      color: #222;
+    }
+
+    .policyGrid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1rem;
+    }
+
+    .policyCard {
+      background: #f5f5f5;
+      padding: 1.5rem;
+      border-radius: 10px;
+    }
+
+    form.policyCard {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    input.search, textarea.search, select.search {
+      padding: 0.8rem 1rem;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 1rem;
+      width: 100%;
+    }
+
+    button.cta {
+      background-color: #111;
+      color: white;
+      border: none;
+      padding: 1rem;
+      font-size: 1rem;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    button.cta:hover {
+      background-color: #333;
+    }
+
+    footer.foot {
+      text-align: center;
+      padding: 2rem 0;
+      color: #777;
+      font-size: 0.9rem;
+    }
+  </style>
 </head>
 
 <body>
 <header class="top">
   <div class="topInner">
     <a class="brand" href="/">
-      <span class="brandMark"></span>
       <span>Imprev Clothing</span>
     </a>
     <nav class="nav">
       <a href="/">Home</a>
-      <a href="/hiring">Hiring</a>
+      <a href="/hiring">Volunteer</a>
       <a href="https://discord.gg/eUd4qP4DV8" target="_blank">Discord</a>
     </nav>
   </div>
@@ -24,60 +143,67 @@
 
 <main class="wrap">
   <section class="heroMain">
-    <h1 class="heroTitle">We’re Hiring</h1>
+    <h1 class="heroTitle">Join Our Volunteer Team</h1>
     <p class="heroSub">
-      Small team. Real impact. No corporate fluff.
+      Help us create real impact. Small team, big ideas — no corporate fluff.
     </p>
   </section>
 
   <% if (sent) { %>
     <div class="policyWrap">
       <h2 class="policyTitle">Application Sent</h2>
-      <p class="heroSub">Thanks — we’ll be in touch if it’s a fit.</p>
+      <p class="heroSub">Thank you! We'll be in touch if it's a fit.</p>
     </div>
   <% } %>
 
   <section class="policyWrap">
     <h2 class="policyTitle">Open Positions</h2>
-
     <div class="policyGrid">
       <div class="policyCard">
         <h3>Marketer</h3>
-        <p>Social growth, drops, campaigns, reach.</p>
+        <p>Social media campaigns, growth, and outreach.</p>
       </div>
 
       <div class="policyCard">
         <h3>Designer</h3>
-        <p>Streetwear graphics, concepts, brand visuals.</p>
+        <p>Streetwear graphics, branding, and visual concepts.</p>
       </div>
 
       <div class="policyCard">
         <h3>Manager</h3>
-        <p>Ops, coordination, keeping things moving.</p>
+        <p>Operations, coordination, and keeping projects moving.</p>
       </div>
     </div>
   </section>
 
   <section class="policyWrap">
     <h2 class="policyTitle">Apply</h2>
-
-    <form method="POST" action="/apply" class="policyCard">
-      <input class="search" name="name" placeholder="Name" required />
-      <input class="search" name="email" placeholder="Email" required />
+    <form method="POST" action="/apply" class="policyCard" enctype="multipart/form-data">
+      <input class="search" name="name" placeholder="Full Name" required />
+      <input class="search" type="email" name="email" placeholder="Email" required />
       <input class="search" name="discord" placeholder="Discord (optional)" />
-
+      
       <select class="search" name="role" required>
-        <option value="">Select role</option>
+        <option value="">Select Position</option>
         <option>Marketer</option>
         <option>Designer</option>
         <option>Manager</option>
       </select>
 
+      <input class="search" type="file" name="resume" accept=".pdf,.doc,.docx" required />
+
+      <textarea
+        class="search"
+        name="experience"
+        rows="5"
+        placeholder="Briefly describe your relevant experience"
+        required></textarea>
+
       <textarea
         class="search"
         name="message"
         rows="5"
-        placeholder="Why should we work with you?"
+        placeholder="Why would you like to volunteer with us?"
         required></textarea>
 
       <button class="cta" type="submit">Submit Application</button>
@@ -85,6 +211,6 @@
   </section>
 </main>
 
-<footer class="foot">© Imprev Clothing</footer>
+<footer class="foot">© 2026 Imprev Clothing</footer>
 </body>
 </html>
