@@ -7,8 +7,6 @@ import {
   regionFromCountry,
   ALLOWED_SHIP_COUNTRIES,
 } from "../config/money.js";
-import multer from "multer";
-import path from "path";
 
 const r = Router();
 
@@ -43,40 +41,36 @@ r.get("/success", (req, res) => res.render("success"));
 r.get("/cancel", (req, res) => res.render("cancel"));
 
 /* ---------------- HIRING ---------------- */
-// Multer setup for resume upload
-const storage = multer.memoryStorage();
-const upload = multer({
-  storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
-  fileFilter: (req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase();
-    if ([".pdf", ".doc", ".docx"].includes(ext)) cb(null, true);
-    else cb(new Error("Resume must be a PDF or DOC/DOCX"));
-  },
-});
-
 r.get("/hiring", (req, res) => {
   res.render("hiring", { sent: req.query.sent === "1" });
 });
 
-r.post("/apply", upload.single("resume"), async (req, res) => {
+r.post("/apply", async (req, res) => {
   try {
-    const { name, email, discord, role, experience, message } = req.body;
+    const { name, email, discord, role, experience, message, resumeLink } = req.body;
 
-    if (!name || !email || !role || !experience || !message) {
+    // Validate required fields
+    if (!name || !email || !role || !experience || !message || !resumeLink) {
       return res.status(400).send("Missing required fields");
     }
 
-    // Validate email format
+    // Validate email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) return res.status(400).send("Invalid email format");
 
-    if (!req.file) return res.status(400).send("Resume file is required (PDF/DOC/DOCX)");
+    // Validate resume link
+    try {
+      const url = new URL(resumeLink);
+      if (!url.protocol.startsWith("http")) throw new Error();
+    } catch {
+      return res.status(400).send("Invalid resume link URL");
+    }
 
+    // Discord embed payload
     const payload = {
       embeds: [
         {
-          title: "📥 New Imprev Volunteer Application",
+          title: "📥 New Volunteer Application",
           color: 0x2f3136,
           fields: [
             { name: "Name", value: name, inline: true },
@@ -85,7 +79,7 @@ r.post("/apply", upload.single("resume"), async (req, res) => {
             { name: "Discord", value: discord || "N/A" },
             { name: "Experience", value: experience.slice(0, 1000) },
             { name: "Message", value: message.slice(0, 1000) },
-            { name: "Resume", value: req.file.originalname },
+            { name: "Resume", value: resumeLink },
           ],
           timestamp: new Date().toISOString(),
         },
@@ -120,14 +114,7 @@ r.post("/apply", upload.single("resume"), async (req, res) => {
 /* ---------------- CHECKOUT ---------------- */
 r.post("/checkout", async (req, res) => {
   try {
-    const {
-      productId,
-      variantSku,
-      size,
-      qty,
-      country,
-      email,
-    } = req.body;
+    const { productId, variantSku, size, qty, country, email } = req.body;
 
     const quantity = Math.max(1, Math.min(10, Number(qty || 1)));
     const region = regionFromCountry(country || "GB");
